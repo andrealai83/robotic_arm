@@ -1,0 +1,13 @@
+F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Braccio Robotico.exe.config
+F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Braccio Robotico.exe
+F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Braccio Robotico.pdb
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.AssemblyReference.cache
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio_Robotico.Properties.Resources.resources
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.GenerateResource.cache
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.CoreCompileInputs.cache
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.exe
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.pdb
+F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Krypton.Toolkit.dll
+F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Krypton.Toolkit.xml
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.CopyComplete
+F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmMain.resources
