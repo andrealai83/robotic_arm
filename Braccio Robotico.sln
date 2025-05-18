@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.34018.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Braccio Robotico", "Braccio Robotico\Braccio Robotico.csproj", "{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Braccio3DViewer", "Braccio3DViewer\Braccio3DViewer.csproj", "{5F09913A-416A-4747-82F9-33396F8640CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F09913A-416A-4747-82F9-33396F8640CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F09913A-416A-4747-82F9-33396F8640CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F09913A-416A-4747-82F9-33396F8640CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F09913A-416A-4747-82F9-33396F8640CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

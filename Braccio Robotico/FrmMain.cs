@@ -1,49 +1,31 @@
-﻿using System;
+﻿using Braccio_Robotico.Helper; 
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.Integration;
 
+using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Braccio_Robotico
 {
     public partial class FrmMain : Form
     {
-        SerialPort serial = new SerialPort("COM5", 115200);
-
-        Boolean MagnetState = false;
-
-        System.Collections.Generic.List<movimento> ListaMovimenti = new System.Collections.Generic.List<movimento>();
-
+        private SerialManager serialManager;
+        private MovimentoManager movimentoManager = new MovimentoManager();
+        private string MagState = "C:0";
+        private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
         public FrmMain()
         {
-            InitializeComponent();
-            gpMagnetState.Text = "Magnet state (OFF)";
-            serial.DataReceived += Serial_DataReceived;
-            serial.Open();
-            Init();
-        }
-
-        private void Init()
-        {
-            RobotConfig.SendConfiguration(serial);
-            GoHome();
-            
-
-        }
-
-        private void Serial_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-            try
-            {
-                string data = serial.ReadLine().Trim();
-                LogMessage(data);
-            }
-            catch (Exception ex)
-            {
-                LogMessage($"Errore di comunicazione: {ex.Message}");
-            }
+            InitializeComponent(); 
+            serialManager = new SerialManager();
+            serialManager.OnDataReceived += LogMessage; 
+            RobotConfig.InizializzaDatabaseSeNecessario();
+            RobotConfig.CaricaConfigurazioni(); 
         }
 
         private void LogMessage(string message)
@@ -54,189 +36,136 @@ namespace Braccio_Robotico
                 return;
             }
 
-            var item = new ListViewItem(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")); 
-            item.SubItems.Add(message); // Aggiungi il messaggio come SubItem
+            var item = new ListViewItem(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            item.SubItems.Add(message);
             listViewLog.Items.Add(item);
+            listViewLog.Items[listViewLog.Items.Count - 1].EnsureVisible();
+             
+            AggiornaTrackbarDaPosizione(message);
+        }
 
-            // Scorri automaticamente verso l'ultimo elemento
-            // Scorri automaticamente verso l'ultimo elemento
-            if (listViewLog.Items.Count > 0)
+        private void btnConnect_Click(object sender, EventArgs e)
+        {
+            serialManager = new SerialManager(comboBoxComPorts.Text);
+            serialManager.OnDataReceived += LogMessage;
+            serialManager.Open();
+              
+            viewer3D.UpdateAngles(
+                 63,    // Y → base
+                 -125,  // X → snodo 1
+                 140,   // Z → snodo 2
+                 -66    // A → snodo 3 (calamita)
+             );
+
+            if (serialManager.Port.IsOpen)
             {
-                var lastItem = listViewLog.Items[listViewLog.Items.Count - 1] as ListViewItem;
-                lastItem?.EnsureVisible();
-            }
-
-        }
-         
-        private void InviaComando(char asse, decimal valore)
-        {
-            // Invio comando singolo per asse
-            string comando = $"{asse}:{valore}\n";
-            serial.Write(comando);
-            Console.WriteLine($"Comando inviato: {comando}");
-        }
-
-        private void InviaComandiMultipli()
-        {
-            // Invio comandi per tutti gli assi
-            string comando = $"X:{trackBar2.Value}\n" +
-                             $"Y:{trackBarBase.Value}\n" +
-                             $"Z:{trackBar1.Value}\n" +
-                             $"A:{trackBar3.Value}\n";
-            serial.Write(comando);
-            Console.WriteLine($"Comandi multipli inviati:\n{comando}");
-        }
- 
-        private void buttonAll_Click(object sender, EventArgs e)
-        {
-            InviaComandiMultipli();
-        }
-         
-        private void button6_Click(object sender, EventArgs e)
-        {
-            System.Collections.Generic.List<movimento> lista = new System.Collections.Generic.List<movimento>();
-
-            lista.Add(new movimento { Y = 0, X = 0, Z = 0 });
-            lista.Add(new movimento { Y = 5, X = 10, Z = -5 });
-            lista.Add(new movimento { Y = 10, X = 20, Z = -10 });
-            lista.Add(new movimento { Y = 15, X = 30, Z = -15 });
-            lista.Add(new movimento { Y = 20, X = 40, Z = -20 });
-            lista.Add(new movimento { Y = 15, X = 30, Z = -15 });
-            lista.Add(new movimento { Y = 10, X = 20, Z = -10 });
-            lista.Add(new movimento { Y = 0, X = 0, Z = 0 }); 
-            lista.Add(new movimento { Y = 5, X = 10, Z = -5 });
-            lista.Add(new movimento { Y = 10, X = 20, Z = -10 });
-            lista.Add(new movimento { Y = 15, X = 30, Z = -15 });
-            lista.Add(new movimento { Y = 20, X = 40, Z = -20 });
-            lista.Add(new movimento { Y = 15, X = 30, Z = -15 });
-            lista.Add(new movimento { Y = 10, X = 20, Z = -10 });
-            lista.Add(new movimento { Y = 0, X = 0, Z = 0 });
-
-            foreach (movimento movi in lista)
-            {
-                // Invia il comando
-                string comando = $"X:{movi.X}\nY:{movi.Y}\nZ:{movi.Z}\n";
-                serial.Write(comando);
-                Console.WriteLine($"Comando inviato: {comando}");
-
-                // Aspetta la conferma "ok" dall'Arduino
-                while (true)
-                {
-                    string risposta = serial.ReadLine().Trim();
-                    if (risposta == "ok")
-                    {
-                        Console.WriteLine("Comando completato.");
-                        break;
-                    }
-                }
+                btnConnect.Enabled = false;
+                btnDisconnect.Enabled = true; 
+                RobotConfig.SendConfiguration(serialManager.Port);
             }
         }
-       
-        private void TurnMagnetState(int state) {
-            MagnetState = state == 1 ? true : false;
-            string comando = $"C:{state}";
-            serial.Write(comando);
-            Console.WriteLine($"Comando inviato: {comando}"); 
-            gpMagnetState.Text = MagnetState ? "Magnet state (ON)" : "Magnet state (OFF)";
+
+        private void btnDisconnect_Click(object sender, EventArgs e)
+        {
+            serialManager.Close();
+            btnConnect.Enabled = true;
+            btnDisconnect.Enabled = false;
         }
 
         private void Form1_Load(object sender, EventArgs e)
-        { 
-          
-        }
-
-        private void magnetON_Click(object sender, EventArgs e)
         {
-            TurnMagnetState(1);
-        }
+            comboBoxComPorts.Items.Clear();
+            comboBoxComPorts.Items.AddRange(SerialPort.GetPortNames());
+            if (comboBoxComPorts.Items.Count > 0)
+                comboBoxComPorts.SelectedIndex = 0;
 
-        private void magnetOFF_Click(object sender, EventArgs e)
-        {
-            TurnMagnetState(0);
-        }
-
-        private void kryptonListBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
+            var host = new ElementHost();
+            host.Dock = DockStyle.Fill;  
+            host.Child = viewer3D; 
+            pnlSimulation.Controls.Add(host);
         }
 
         private void btnSavePosition_Click(object sender, EventArgs e)
-        {
-            movimento mov = new movimento
+        { 
+            var mov = new Movimento
             {
                 Y = trackBarBase.Value,
                 X = trackBar2.Value,
                 Z = trackBar1.Value,
-                A = trackBar3.Value
+                A = trackBar3.Value,
+                C = MagState
             };
 
+            movimentoManager.Add(mov);
 
-            ListaMovimenti.Add(mov);
-
-            // Aggiorna la lista visiva
             listBoxPositions.Items.Clear();
-            foreach (var item in ListaMovimenti)
-            {
-                listBoxPositions.Items.Add($"Y: {item.Y} | X: {item.X} | Z: {item.Z} | A: {item.A}");
-            }
+            foreach (var item in movimentoManager.GetFormattedList())
+                listBoxPositions.Items.Add(item);
 
-            Console.WriteLine("Movimento aggiunto alla lista.");
+            btnPlayPosition.Enabled = movimentoManager.HasMovements;
         }
 
         private async void btnPlayPosition_Click(object sender, EventArgs e)
         {
-            foreach (movimento movi in ListaMovimenti)
-            {
-                string comando = $"X:{movi.X}\n" +
-                                 $"Y:{movi.Y}\n" +
-                                 $"Z:{movi.Z}\n" +
-                                 $"A:{movi.A}\n";
+            var history = new List<Movimento>();
 
+            foreach (var movi in movimentoManager.GetMovimenti())
+            {
                 try
                 {
-                    // Invia il comando
-                    serial.Write(comando);
-                    Console.WriteLine($"Comando inviato: {comando}");
+                    string comando = $"X:{movi.X}\nY:{movi.Y}\nZ:{movi.Z}\nA:{movi.A}\n{movi.C}\nRUN\n";
+                    serialManager.Port.Write(comando);
+                    history.Add(movi);  
 
-                    // Attende la conferma "ready"
-                    bool esito = await AttendiRispostaAsync("ready", 20000); // Timeout di 20 secondi
+                    viewer3D.UpdateAngles(
+                         movi.Y,    // Y → base
+                         movi.X,    // X → snodo 1
+                         movi.Z,    // Z → snodo 2
+                         movi.A     // A → snodo 3 (calamita)
+                     );
 
-                    if (esito)
+                    LogMessage($"Command sent:\n{comando}");
+
+                    bool success = await WaitForResponse("ready", 20000);
+                    if (!success)
                     {
-                        Console.WriteLine("Movimento completato.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Timeout: nessuna risposta dall'Arduino.");
+                        MessageBox.Show("Timeout: no response from Arduino.", "Timeout", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         break;
                     }
+
+                    Console.WriteLine("Movement completed.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Errore di comunicazione: {ex.Message}");
+                    MessageBox.Show($"Error while sending command: {ex.Message}", "Communication Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
                 }
             }
-
-            Console.WriteLine("Tutti i movimenti sono stati inviati.");
+             
+            Console.WriteLine("All movements sent.");
         }
-
-        private Task<bool> AttendiRispostaAsync(string attesa, int timeout)
+         
+        private Task<bool> WaitForResponse(string attesa, int timeout)
         {
             return Task.Run(() =>
             {
+                serialManager.DisableDataReceived();
+
                 DateTime startTime = DateTime.Now;
                 while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
                 {
                     try
                     {
-                        if (serial.BytesToRead > 0)
+                        if (serialManager.Port.BytesToRead > 0)
                         {
-                            string risposta = serial.ReadLine().Trim();
+                            string risposta = serialManager.Port.ReadLine().Trim();
                             Console.WriteLine($"Risposta ricevuta: {risposta}");
 
                             if (risposta == attesa)
+                            {
+                                serialManager.EnableDataReceived();
                                 return true;
+                            }
                         }
                     }
                     catch (TimeoutException)
@@ -249,44 +178,29 @@ namespace Braccio_Robotico
                         break;
                     }
 
-                    // Evita di bloccare completamente il thread
                     Thread.Sleep(10);
                 }
 
+                serialManager.EnableDataReceived();
                 return false;
             });
         }
-
-
-
-        private void btnGoBase_Click(object sender, EventArgs e)
+         
+        private void btnClear_Click(object sender, EventArgs e)
         {
-            InviaComando('Y', trackBarBase.Value);
-        }
-
-        private void btnGo1_Click(object sender, EventArgs e)
-        {
-            InviaComando('Z', trackBar1.Value);
-        }
-
-        private void btnGo2_Click(object sender, EventArgs e)
-        {
-            InviaComando('X', trackBar2.Value);
-        }
-
-        private void btnGo3_Click(object sender, EventArgs e)
-        {
-            InviaComando('A', trackBar3.Value);
+            movimentoManager.Clear();
+            listBoxPositions.Items.Clear();
+            btnPlayPosition.Enabled = false;
         }
 
         private void btnGoAll_Click(object sender, EventArgs e)
         {
-            InviaComandiMultipli();
-        }
-
-        private void kryptonButton1_Click(object sender, EventArgs e)
-        {
-            GoHome();
+            serialManager.Write($"X:{trackBar2.Value}");
+            serialManager.Write($"Y:{trackBarBase.Value}");
+            serialManager.Write($"Z:{trackBar1.Value}");
+            serialManager.Write($"A:{trackBar3.Value}");
+            serialManager.Write($"{MagState}");
+            serialManager.Write("EXEC"); 
         }
 
         private void GoHome()
@@ -295,38 +209,214 @@ namespace Braccio_Robotico
             trackBar1.Value = 0;
             trackBar2.Value = 0;
             trackBar3.Value = 0;
-            InviaComandiMultipli();
+            btnGoAll_Click(this, EventArgs.Empty);
         }
 
-        private void trackBar3_ValueChanged(object sender, EventArgs e)
+        private void kryptonButton1_Click(object sender, EventArgs e)
         {
-            btnGo3.Text = $"GO ({trackBar3.Value})";
+            GoHome();
         }
 
-        private void trackBar1_ValueChanged(object sender, EventArgs e)
+        private void magnetON_Click(object sender, EventArgs e)
         {
-            btnGo1.Text = $"GO ({trackBar1.Value})";
+            ToggleMagnet(true);
         }
 
-        private void trackBar2_ValueChanged(object sender, EventArgs e)
+        private void magnetOFF_Click(object sender, EventArgs e)
         {
-            btnGo2.Text = $"GO ({trackBar2.Value})";
+            ToggleMagnet(false);
+        }
+
+        private void ToggleMagnet(bool state)
+        {
+            MagState = state ? "C:1" : "C:0";
+            serialManager.Write(MagState);
+            gpMagnetState.Text = state ? "Magnet state (ON)" : "Magnet state (OFF)";
+            magnetON.Enabled = !state;
+            magnetOFF.Enabled = state;
         }
 
         private void trackBarBase_ValueChanged(object sender, EventArgs e)
         {
-            btnGoBase.Text = $"GO ({trackBarBase.Value})";
+            trackBarNumericBase.Value = trackBarBase.Value;
+            var mov = new Movimento
+            {
+                Y = trackBarBase.Value,
+                X = trackBar2.Value,
+                Z = trackBar1.Value,
+                A = trackBar3.Value,
+                C = MagState
+            };
+            viewer3D.UpdateAngles(
+                 trackBarBase.Value,  // Y → base
+                 trackBar2.Value,     // X → snodo 1
+                 trackBar1.Value,     // Z → snodo 2
+                 trackBar3.Value      // A → snodo 3 (calamita)
+             ); 
         }
 
-        private void btnClear_Click(object sender, EventArgs e)
+        private void trackBar1_ValueChanged(object sender, EventArgs e)
         {
-            ListaMovimenti = new System.Collections.Generic.List<movimento>();
-            listBoxPositions.Items.Clear(); 
+            trackBarNumeric1.Value = trackBar1.Value;
+            var mov = new Movimento
+            {
+                Y = trackBarBase.Value,
+                X = trackBar2.Value,
+                Z = trackBar1.Value,
+                A = trackBar3.Value,
+                C = MagState
+            };
+
+            viewer3D.UpdateAngles(
+                 trackBarBase.Value,  // Y → base
+                 trackBar2.Value,     // X → snodo 1
+                 trackBar1.Value,     // Z → snodo 2
+                 trackBar3.Value      // A → snodo 3 (calamita)
+             ); 
         }
 
-        private void groupBox1_Enter(object sender, EventArgs e)
+        private void trackBar2_ValueChanged(object sender, EventArgs e)
         {
-
+            trackBarNumeric2.Value = trackBar2.Value;
+            var mov = new Movimento
+            {
+                Y = trackBarBase.Value,
+                X = trackBar2.Value,
+                Z = trackBar1.Value,
+                A = trackBar3.Value,
+                C = MagState
+            };
+            viewer3D.UpdateAngles(
+                 trackBarBase.Value,  // Y → base
+                 trackBar2.Value,     // X → snodo 1
+                 trackBar1.Value,     // Z → snodo 2
+                 trackBar3.Value      // A → snodo 3 (calamita)
+             ); 
         }
+
+        private void trackBar3_ValueChanged(object sender, EventArgs e)
+        {
+            trackBarNumeric3.Value = trackBar3.Value;
+
+            var mov = new Movimento
+            {
+                Y = trackBarBase.Value,
+                X = trackBar2.Value,
+                Z = trackBar1.Value,
+                A = trackBar3.Value,
+                C = MagState
+            };
+
+            viewer3D.UpdateAngles(
+                 trackBarBase.Value,  // Y → base
+                 trackBar2.Value,     // X → snodo 1
+                 trackBar1.Value,     // Z → snodo 2
+                 trackBar3.Value      // A → snodo 3 (calamita)
+             ); 
+        }
+
+        private void btnConfig_Click(object sender, EventArgs e)
+        {
+            FrmConfigurations frmConfigurations = new FrmConfigurations();
+            frmConfigurations.ShowDialog();
+        }
+
+        private void btnGestionePosizioni_Click(object sender, EventArgs e)
+        {
+            var frm = new FrmManagePosizioni(serialManager);
+            frm.ShowDialog(); 
+        }
+
+        private void btnSalvaSetCorrente_Click(object sender, EventArgs e)
+        {
+            string nome = InputDialog.Show("Inserisci il nome del set:", "Salva Posizione", "Nuovo Set");
+            if (!string.IsNullOrWhiteSpace(nome))
+            {
+                PosizioneStorage.SalvaSetPosizioni(nome, movimentoManager.GetMovimenti());
+                MessageBox.Show("Set salvato correttamente!", "OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            } 
+        }
+ 
+
+        private void trackBarNumeric3_ValueChanged(object sender, EventArgs e)
+        {
+            trackBar3.Value = int.Parse(trackBarNumeric3.Value.ToString());
+        }
+
+        private void trackBarNumeric1_ValueChanged(object sender, EventArgs e)
+        {
+            trackBar1.Value = int.Parse(trackBarNumeric1.Value.ToString());
+        }
+
+        private void trackBarNumericBase_ValueChanged(object sender, EventArgs e)
+        {
+            trackBarBase.Value = int.Parse(trackBarNumericBase.Value.ToString());
+        }
+
+        private void trackBarNumeric2_ValueChanged(object sender, EventArgs e)
+        {
+            trackBar2.Value = int.Parse(trackBarNumeric2.Value.ToString());
+        }
+
+        private void BtnSetHome_Click(object sender, EventArgs e)
+        {
+            trackBar2.Value = 0;
+            trackBarBase.Value = 0;
+            trackBar1.Value = 0;
+            trackBar3.Value = 0;
+
+            serialManager.Write("SETHOME");
+        }   
+    
+
+    private void AggiornaTrackbarDaPosizione(string message)
+    {
+        if (!message.StartsWith("NEWPOSITION:")) return;
+
+        try
+        {
+            // Rimuove il prefisso
+            string valori = message.Substring("NEWPOSITION:".Length);
+            // Esempio: X:-1;Y:9;Z:-1;A:-1
+            string[] componenti = valori.Split(';');
+
+            int x = 0, y = 0, z = 0, a = 0, c = 0;
+
+            foreach (var comp in componenti)
+            {
+                var coppia = comp.Split(':');
+                if (coppia.Length != 2) continue;
+
+                string label = coppia[0];
+                int valore = int.TryParse(coppia[1], out int v) ? v : 0;
+
+                switch (label)
+                {
+                    case "X": x = valore; break;
+                    case "Y": y = valore; break;
+                    case "Z": z = valore; break;
+                    case "A": a = valore; break;
+                    case "C": c = valore; break;
+                }
+            }
+
+            // Imposta i valori sui TrackBar e i NumericUpDown
+            trackBar2.Value = Math.Max(trackBar2.Minimum, Math.Min(trackBar2.Maximum, x));
+            trackBarBase.Value = Math.Max(trackBarBase.Minimum, Math.Min(trackBarBase.Maximum, y));
+            trackBar1.Value = Math.Max(trackBar1.Minimum, Math.Min(trackBar1.Maximum, z));
+            trackBar3.Value = Math.Max(trackBar3.Minimum, Math.Min(trackBar3.Maximum, a));
+
+            ToggleMagnet(c == 1 ? true : false);
+
+
+            // Forza l'aggiornamento della simulazione 3D
+            viewer3D.UpdateAngles(y, x, z, a);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Errore nel parsing NEWPOSITION: " + ex.Message);
+        }
+    }
+
     }
 }

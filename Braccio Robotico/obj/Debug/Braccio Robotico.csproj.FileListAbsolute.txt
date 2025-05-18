@@ -11,3 +11,37 @@ F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Krypton.Toolkit.dll
 F:\Repos\Braccio Robotico\Braccio Robotico\bin\Debug\Krypton.Toolkit.xml
 F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.CopyComplete
 F:\Repos\Braccio Robotico\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmMain.resources
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.exe.config
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.exe
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.pdb
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Krypton.Toolkit.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Data.Sqlite.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\SQLitePCLRaw.core.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\SQLitePCLRaw.provider.dynamic_cdecl.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Buffers.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Memory.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Numerics.Vectors.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Krypton.Toolkit.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Data.Sqlite.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Buffers.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Memory.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Numerics.Vectors.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.AssemblyReference.cache
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.SuggestedBindingRedirects.cache
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.exe.config
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmConfigurations.resources
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmMain.resources
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.Properties.Resources.resources
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.GenerateResource.cache
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.CoreCompileInputs.cache
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.CopyComplete
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.exe
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.pdb
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Data.SQLite.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Data.SQLite.xml
+F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmManagePosizioni.resources
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.pdb
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe.config

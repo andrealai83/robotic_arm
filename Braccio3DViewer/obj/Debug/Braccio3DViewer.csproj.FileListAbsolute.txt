@@ -1,0 +1,15 @@
+F:\Repos\robotic_arm\Braccio3DViewer\bin\Debug\Braccio3DViewer.exe.config
+F:\Repos\robotic_arm\Braccio3DViewer\bin\Debug\Braccio3DViewer.exe
+F:\Repos\robotic_arm\Braccio3DViewer\bin\Debug\Braccio3DViewer.pdb
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.csproj.AssemblyReference.cache
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DWindow.g.cs
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\App.g.cs
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer_MarkupCompile.cache
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer_MarkupCompile.lref
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DWindow.baml
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.g.resources
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.Properties.Resources.resources
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.csproj.GenerateResource.cache
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.csproj.CoreCompileInputs.cache
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.exe
+F:\Repos\robotic_arm\Braccio3DViewer\obj\Debug\Braccio3DViewer.pdb
