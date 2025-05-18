@@ -33,6 +33,8 @@ bool motore2Completato = true;
 bool motore3Completato = true;
 bool motore4Completato = true;
 
+bool saveRequest = false;
+
 int target1 = 0, target2 = 0, target3 = 0, target4 = 0;
 bool calamitaAttiva = false;
 
@@ -146,7 +148,9 @@ void loop() {
     Serial.println("ready");
 
     String MagnetState = calamitaAttiva ? ";C:1" : ";C:0";
-    String posizione = "NEWPOSITION:X:" + String(target1) + ";Y:" + String(target2) + ";Z:" + String(target3) + ";A:" + String(target4) + MagnetState;
+    String SaveRequestReceived = saveRequest ? ";SAVE:1" : ";SAVE:0";
+    String posizione = "NEWPOSITION:X:" + String(target1) + ";Y:" + String(target2) + ";Z:" + String(target3) + ";A:" + String(target4) + MagnetState + SaveRequestReceived;
+    saveRequest = 0;
     Serial.println(posizione);  
     Serial1.println("ready");
     eseguiMovimento = false;
@@ -199,7 +203,11 @@ void ComandReceived(String comando) {
     setTarget(motore1, xTargetTemp);
     motore1Completato = false;
     target1 = xTargetTemp;
-  } else if (comando.startsWith("Y:")) {
+  } 
+  else if (comando.startsWith("SAVE:")) {
+    saveRequest = true; 
+  } 
+  else if (comando.startsWith("Y:")) {
     yTargetTemp = parseTarget(comando);
     mostraMessaggio("Y:" + String(yTargetTemp));
     setTarget(motore2, yTargetTemp);

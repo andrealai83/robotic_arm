@@ -61,7 +61,7 @@ void setup() {
   u8g2.firstPage();
   do {
     u8g2.drawStr(10, 24, "Joystick Pronto!");
-    u8g2.drawStr(10, 45, "By Andre ⚙️");
+    u8g2.drawStr(10, 45, "");
   } while (u8g2.nextPage());
 
   delay(2000); // Mostra 2 secondi
@@ -108,7 +108,7 @@ void loop() {
     if (sw1Pressed) magnet = !magnet;
     btSerial.println(magnet ? "C:1" : "C:0");
 
-    if (sw2Pressed) btSerial.println("SW2:1");
+    if (sw2Pressed) btSerial.println("SAVE:1");
 
     btSerial.println("EXEC");
     Serial.println("📤 Inviato");

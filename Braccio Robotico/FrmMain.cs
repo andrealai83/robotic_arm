@@ -380,7 +380,7 @@ namespace Braccio_Robotico
             // Esempio: X:-1;Y:9;Z:-1;A:-1
             string[] componenti = valori.Split(';');
 
-            int x = 0, y = 0, z = 0, a = 0, c = 0;
+            int x = 0, y = 0, z = 0, a = 0, c = 0, save = 0;
 
             foreach (var comp in componenti)
             {
@@ -397,6 +397,7 @@ namespace Braccio_Robotico
                     case "Z": z = valore; break;
                     case "A": a = valore; break;
                     case "C": c = valore; break;
+                    case "SAVE": save = valore; break;
                 }
             }
 
@@ -405,9 +406,28 @@ namespace Braccio_Robotico
             trackBarBase.Value = Math.Max(trackBarBase.Minimum, Math.Min(trackBarBase.Maximum, y));
             trackBar1.Value = Math.Max(trackBar1.Minimum, Math.Min(trackBar1.Maximum, z));
             trackBar3.Value = Math.Max(trackBar3.Minimum, Math.Min(trackBar3.Maximum, a));
-
+                 
             ToggleMagnet(c == 1 ? true : false);
 
+                if (save == 1)
+                { 
+                    var mov = new Movimento
+                    {
+                        Y = trackBarBase.Value,
+                        X = trackBar2.Value,
+                        Z = trackBar1.Value,
+                        A = trackBar3.Value,
+                        C = MagState
+                    };
+
+                    movimentoManager.Add(mov);
+
+                    listBoxPositions.Items.Clear();
+                    foreach (var item in movimentoManager.GetFormattedList())
+                        listBoxPositions.Items.Add(item);
+
+                    btnPlayPosition.Enabled = movimentoManager.HasMovements;
+                }
 
             // Forza l'aggiornamento della simulazione 3D
             viewer3D.UpdateAngles(y, x, z, a);

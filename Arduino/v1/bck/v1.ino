@@ -1,8 +1,6 @@
 #include <AccelStepper.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <SoftwareSerial.h>
-SoftwareSerial btSerial(2, 3); // RX, TX
 
 // Imposta l'indirizzo I2C (di solito 0x27 o 0x3F)
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -13,6 +11,8 @@ int ENA2 = 10, DIR2 = 9, PUL2 = 8;
 int ENA3 = 7, DIR3 = 6, PUL3 = 5;
 int ENA4 = 4, DIR4 = 3, PUL4 = 2;
 int transistorPin = A0;
+
+#define BT_STATE_PIN A1
 
 // Parametri motore (inizialmente impostati come default)
 int passiPerGiro = 3000;
@@ -39,15 +39,23 @@ bool calamitaAttiva = false;
 int xTargetTemp, yTargetTemp, zTargetTemp, aTargetTemp;
 bool eseguiMovimento = false;
 
-int homeX = 0, homeY = 0, homeZ = 0, homeA = 0;
- 
+byte bluetoothIcon[8] = {
+  B00000,
+  B00100,
+  B01010,
+  B00100,
+  B01010,
+  B00100,
+  B00000,
+  B00000
+};
+
 void setup() {
 
-  Serial.begin(9600);
-  btSerial.begin(9600);
-  Serial.println("Mega pronto, BT su Serial1");
-  btSerial.println("Ciao dal Bluetooth!");
-
+  Serial.begin(115200);
+  Serial1.begin(9600);
+   
+  pinMode(BT_STATE_PIN, INPUT);
   pinMode(transistorPin, OUTPUT);
 
   // Configura i motori con le impostazioni iniziali
@@ -58,6 +66,7 @@ void setup() {
 
   // Inizializza il display
   lcd.init();
+  lcd.createChar(0, bluetoothIcon);
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -65,6 +74,10 @@ void setup() {
   delay(1000);
   lcd.clear();
   aggiornaDisplay();
+}
+
+bool bluetoothConnesso() {
+  return digitalRead(BT_STATE_PIN) == HIGH;
 }
 
 // Aggiorna le informazioni sul display
@@ -81,6 +94,13 @@ void aggiornaDisplay() {
   lcd.print(" A:");
   lcd.print(target4);
 
+  lcd.setCursor(15, 1);
+  if (bluetoothConnesso()) {
+    lcd.write((byte)0);  // mostra icona Bluetooth
+  } else {
+    lcd.print(" "); // spazio vuoto se non connesso
+  }
+ 
   // Stato calamita in alto a destra
   lcd.setCursor(12, 0);
   lcd.print(calamitaAttiva ? "ON " : "OFF");
@@ -98,82 +118,21 @@ void mostraMessaggio(String messaggio) {
 }
 
 void loop() {
-  if (Serial.available()) {
-    String comando = Serial.readStringUntil('\n');
+
+  String comando = "";
+
+  if (Serial1.available()) {
+
+    comando = Serial1.readStringUntil('\n');
     comando.trim();
+    Serial.println("Comand Received:" + comando);
+    ComandReceived(comando);
+  }
 
-    if (comando.startsWith("X:")) {
-      xTargetTemp = parseTarget(comando);
-      mostraMessaggio("X:" + String(xTargetTemp));
-      setTarget(motore1, xTargetTemp);
-      motore1Completato = false;
-      target1 = xTargetTemp;
-    } 
-    else if (comando.startsWith("Y:")) {
-      yTargetTemp = parseTarget(comando);
-      mostraMessaggio("Y:" + String(yTargetTemp));
-      setTarget(motore2, yTargetTemp);
-      motore2Completato = false;
-      target2 = yTargetTemp;
-    } 
-    else if (comando.startsWith("Z:")) {
-      zTargetTemp = parseTarget(comando);
-      mostraMessaggio("Z:" + String(zTargetTemp));
-      setTarget(motore3, zTargetTemp);
-      motore3Completato = false;
-      target3 = zTargetTemp;
-    } 
-    else if (comando.startsWith("A:")) {
-      aTargetTemp = parseTarget(comando);
-      mostraMessaggio("A:" + String(aTargetTemp));
-      setTarget(motore4, aTargetTemp);
-      motore4Completato = false;
-      target4 = aTargetTemp;
-    } 
-    else if (comando == "RUN" || comando == "EXEC") {
-      // Esegui i movimenti in parallelo
-      eseguiMovimento = true;
-      mostraMessaggio(comando);
-    } 
-    else if (comando == "SETHOME") {
-      homeX = target1;
-      homeY = target2;
-      homeZ = target3;
-      homeA = target4;
-      mostraMessaggio("Home salvata");
-      Serial.println("ok");
-    } 
-    else if (comando == "GOHOME") {
-      mostraMessaggio("Torno a Home");
-      setTarget(motore1, homeX);
-      motore1Completato = false;
-      target1 = homeX;
-
-      setTarget(motore2, homeY);
-      motore2Completato = false;
-      target2 = homeY;
-
-      setTarget(motore3, homeZ);
-      motore3Completato = false;
-      target3 = homeZ;
-
-      setTarget(motore4, homeA);
-      motore4Completato = false;
-      target4 = homeA;
-
-      eseguiMovimento = true;
-    }
-    else if (comando.startsWith("C:")) {
-      int stato = parseTarget(comando);
-      calamitaAttiva = (stato == 1);
-      digitalWrite(transistorPin, stato == 1 ? HIGH : LOW);
-      Serial.println("ok");
-      mostraMessaggio("C:" + String(stato));
-    } 
-    else if (comando.startsWith("CFG:")) {
-      setConfiguration(comando.substring(4));
-      Serial.println("ok");
-    }
+  if (Serial.available()) {
+    comando = Serial.readStringUntil('\n');
+    comando.trim();
+    ComandReceived(comando);
   }
 
   // Loop continuo per eseguire i movimenti simultanei
@@ -183,15 +142,20 @@ void loop() {
   checkMotor(motore4, motore4Completato);
 
   // Quando tutti i motori hanno finito
-  if (eseguiMovimento &&
-      motore1Completato && motore2Completato &&
-      motore3Completato && motore4Completato) {
+  if (eseguiMovimento && motore1Completato && motore2Completato && motore3Completato && motore4Completato) {
     Serial.println("ready");
+
+    String MagnetState = calamitaAttiva ? ";C:1" : ";C:0";
+    String posizione = "NEWPOSITION:X:" + String(target1) + ";Y:" + String(target2) + ";Z:" + String(target3) + ";A:" + String(target4) + MagnetState;
+    Serial.println(posizione);  
+    Serial1.println("ready");
     eseguiMovimento = false;
+    return;
   }
+
+  //aggiornaDisplay();
 }
 
- 
 // Configura un motore
 void setupMotor(AccelStepper& motore, int pinENA) {
   pinMode(pinENA, OUTPUT);
@@ -224,6 +188,48 @@ void checkMotor(AccelStepper& motore, bool& completato) {
       //Serial.println("ok");
       delay(10);  // Piccolo ritardo per stabilizzare la comunicazione
     }
+  }
+}
+
+void ComandReceived(String comando) {
+
+  if (comando.startsWith("X:")) {
+    xTargetTemp = parseTarget(comando);
+    mostraMessaggio("X:" + String(xTargetTemp));
+    setTarget(motore1, xTargetTemp);
+    motore1Completato = false;
+    target1 = xTargetTemp;
+  } else if (comando.startsWith("Y:")) {
+    yTargetTemp = parseTarget(comando);
+    mostraMessaggio("Y:" + String(yTargetTemp));
+    setTarget(motore2, yTargetTemp);
+    motore2Completato = false;
+    target2 = yTargetTemp;
+  } else if (comando.startsWith("Z:")) {
+    zTargetTemp = parseTarget(comando);
+    mostraMessaggio("Z:" + String(zTargetTemp));
+    setTarget(motore3, zTargetTemp);
+    motore3Completato = false;
+    target3 = zTargetTemp;
+  } else if (comando.startsWith("A:")) {
+    aTargetTemp = parseTarget(comando);
+    mostraMessaggio("A:" + String(aTargetTemp));
+    setTarget(motore4, aTargetTemp);
+    motore4Completato = false;
+    target4 = aTargetTemp;
+  } else if (comando == "RUN" || comando == "EXEC") {
+    // Esegui i movimenti in parallelo
+    eseguiMovimento = true;
+    mostraMessaggio(comando);
+  } else if (comando.startsWith("C:")) {
+    int stato = parseTarget(comando);
+    calamitaAttiva = (stato == 1);
+    digitalWrite(transistorPin, stato == 1 ? HIGH : LOW);
+    Serial.println("ok");
+    mostraMessaggio("C:" + String(stato));
+  } else if (comando.startsWith("CFG:")) {
+    setConfiguration(comando.substring(4));
+    Serial.println("ok");
   }
 }
 
@@ -271,51 +277,4 @@ void setConfiguration(String config) {
     motore4.setAcceleration(maxAccel);
     Serial.println("Max acceleration aggiornata");
   }
-}  su arduino mega e #include <SoftwareSerial.h>
-SoftwareSerial btSerial(2, 3); // RX, TX
-
-
-int joy1X = A0, joy1Y = A1;
-int joy2X = A2, joy2Y = A3;
-
-void setup() {
-  Serial.begin(9600);        // Monitor Seriale del PC
-  btSerial.begin(9600);      // Velocità standard del modulo HC-05/06
-
-  Serial.println("BT Ready - In attesa...");
-  btSerial.println("Ciao dal Bluetooth!");
 }
-
-void loop() {
-
-    // Se ricevo qualcosa via BT, lo stampo sulla seriale
-  if (btSerial.available()) {
-    char c = btSerial.read();
-    Serial.write(c);
-  }
-
-  // Se scrivo da PC, lo mando via Bluetooth
-  if (Serial.available()) {
-    char c = Serial.read();
-    btSerial.write(c);
-  }
-  
-  int base = analogRead(joy1X);  // asse base
-  int spalla = analogRead(joy1Y); // asse spalla
-  int gomito = analogRead(joy2X); // asse gomito
-  int pinza = analogRead(joy2Y);  // asse pinza
-
-  // Mappa in gradi: da 0–1023 → -90° a +90°
-  int b = map(base, 0, 1023, -90, 90);
-  int s = map(spalla, 0, 1023, -90, 90);
-  int g = map(gomito, 0, 1023, -90, 90);
-  int p = map(pinza, 0, 1023, -90, 90);
-
-  Serial.print("X:"); Serial.println(s);
-  Serial.print("Y:"); Serial.println(b);
-  Serial.print("Z:"); Serial.println(g);
-  Serial.print("A:"); Serial.println(p);
-  Serial.println("RUN");
-
-  delay(200); // più reattivo? riduci
-}  
