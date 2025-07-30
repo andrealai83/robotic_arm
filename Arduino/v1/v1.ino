@@ -12,7 +12,17 @@ int ENA3 = 7, DIR3 = 6, PUL3 = 5;
 int ENA4 = 4, DIR4 = 3, PUL4 = 2;
 int transistorPin = A0;
 
+int ENDSTOP_ENABLED = 1;
+
+#define ENDSTOP_X_PIN A3
+#define ENDSTOP_Y_PIN A2
+#define ENDSTOP_Z_PIN A5
+#define ENDSTOP_A_PIN A4
+
 #define BT_STATE_PIN A1
+
+#define BTN_HOMING_PIN A6
+#define BTN_STOP_PIN   A7
 
 // Parametri motore (inizialmente impostati come default)
 int passiPerGiro = 3000;
@@ -56,7 +66,7 @@ void setup() {
 
   Serial.begin(115200);
   Serial1.begin(9600);
-   
+
   pinMode(BT_STATE_PIN, INPUT);
   pinMode(transistorPin, OUTPUT);
 
@@ -65,6 +75,14 @@ void setup() {
   setupMotor(motore2, ENA2);
   setupMotor(motore3, ENA3);
   setupMotor(motore4, ENA4);
+
+  pinMode(ENDSTOP_X_PIN, INPUT_PULLUP);
+  pinMode(ENDSTOP_Y_PIN, INPUT_PULLUP);
+  pinMode(ENDSTOP_Z_PIN, INPUT_PULLUP);
+  pinMode(ENDSTOP_A_PIN, INPUT_PULLUP);
+
+  pinMode(BTN_HOMING_PIN, INPUT_PULLUP);
+  pinMode(BTN_STOP_PIN, INPUT_PULLUP);
 
   // Inizializza il display
   lcd.init();
@@ -102,7 +120,7 @@ void aggiornaDisplay() {
   } else {
     lcd.print(" "); // spazio vuoto se non connesso
   }
- 
+
   // Stato calamita in alto a destra
   lcd.setCursor(12, 0);
   lcd.print(calamitaAttiva ? "ON " : "OFF");
@@ -138,10 +156,10 @@ void loop() {
   }
 
   // Loop continuo per eseguire i movimenti simultanei
-  checkMotor(motore1, motore1Completato);
-  checkMotor(motore2, motore2Completato);
-  checkMotor(motore3, motore3Completato);
-  checkMotor(motore4, motore4Completato);
+  checkMotor(motore1, motore1Completato, ENDSTOP_X_PIN);
+  checkMotor(motore2, motore2Completato, ENDSTOP_Y_PIN);
+  checkMotor(motore3, motore3Completato, ENDSTOP_Z_PIN);
+  checkMotor(motore4, motore4Completato, ENDSTOP_A_PIN);
 
   // Quando tutti i motori hanno finito
   if (eseguiMovimento && motore1Completato && motore2Completato && motore3Completato && motore4Completato) {
@@ -151,10 +169,46 @@ void loop() {
     String SaveRequestReceived = saveRequest ? ";SAVE:1" : ";SAVE:0";
     String posizione = "NEWPOSITION:X:" + String(target1) + ";Y:" + String(target2) + ";Z:" + String(target3) + ";A:" + String(target4) + MagnetState + SaveRequestReceived;
     saveRequest = 0;
-    Serial.println(posizione);  
+    Serial.println(posizione);
     Serial1.println("ready");
     eseguiMovimento = false;
     return;
+  }
+
+  static unsigned long lastButtonTime = 0;
+  if (millis() - lastButtonTime > 300) {
+    if (digitalRead(BTN_HOMING_PIN) == LOW) {
+      Serial.println("BTN: HOMING");
+      mostraMessaggio("BTN: HOMING");
+      ComandReceived("HOMING");
+      lastButtonTime = millis();
+    }
+
+    if (digitalRead(BTN_STOP_PIN) == LOW) {
+      Serial.println("BTN: STOP");
+      mostraMessaggio("BTN: STOP");
+
+      // Ferma i motori e annulla i movimenti
+      motore1.stop();
+      motore1.setCurrentPosition(motore1.currentPosition());
+      motore1Completato = true;
+
+      motore2.stop();
+      motore2.setCurrentPosition(motore2.currentPosition());
+      motore2Completato = true;
+
+      motore3.stop();
+      motore3.setCurrentPosition(motore3.currentPosition());
+      motore3Completato = true;
+
+      motore4.stop();
+      motore4.setCurrentPosition(motore4.currentPosition());
+      motore4Completato = true;
+
+      eseguiMovimento = false;
+      lastButtonTime = millis();
+    }
+
   }
 
   //aggiornaDisplay();
@@ -183,19 +237,42 @@ void setTarget(AccelStepper& motore, int targetGradi) {
 }
 
 // Verifica se il motore ha raggiunto il target
-// Verifica se il motore ha raggiunto il target
-void checkMotor(AccelStepper& motore, bool& completato) {
+void checkMotor(AccelStepper& motore, bool& completato, int endstopPin) {
   if (!completato) {
+
+    if (ENDSTOP_ENABLED == 1 &&  digitalRead(endstopPin) == LOW) {
+      motore.stop();          // ferma la velocità
+      motore.setCurrentPosition(0); // imposta la posizione attuale come zero
+      completato = true;
+      Serial.println("Finecorsa raggiunto!");
+
+      // ⚙️ Backoff per rilasciare l'endstop
+      int gradiBackoff = 5;
+      long passiBackoff = gradiBackoff * passiPerGrado;
+
+      Serial.println("Rilascio finecorsa...");
+      motore.moveTo(passiBackoff);
+      while (motore.distanceToGo() != 0) {
+        motore.run();
+      }
+
+      motore.setCurrentPosition(0); // Riazzera dopo il backoff
+      Serial.println("Backoff completato");
+
+      return;
+    }
+
     motore.run();
     if (motore.distanceToGo() == 0) {
       completato = true;
-      //Serial.println("ok");
-      delay(10);  // Piccolo ritardo per stabilizzare la comunicazione
+      delay(10);
     }
   }
 }
 
 void ComandReceived(String comando) {
+
+  Serial.println(">> COMANDO RICEVUTO: " + comando);
 
   if (comando.startsWith("X:")) {
     xTargetTemp = parseTarget(comando);
@@ -203,10 +280,69 @@ void ComandReceived(String comando) {
     setTarget(motore1, xTargetTemp);
     motore1Completato = false;
     target1 = xTargetTemp;
-  } 
+  }
   else if (comando.startsWith("SAVE:")) {
-    saveRequest = true; 
-  } 
+    saveRequest = true;
+  }
+  else if (comando.startsWith("ENDSTOP_ENABLED_1")) {
+    ENDSTOP_ENABLED = 1;
+  }
+  else if (comando.startsWith("ENDSTOP_ENABLED_0")) {
+    ENDSTOP_ENABLED = 0;
+  }
+  else if (comando == "HOME" || comando == "HOMING") {
+    mostraMessaggio("HOMING...");
+    homingMotor(motore1, ENDSTOP_X_PIN, -2000);
+    homingMotor(motore2, ENDSTOP_Y_PIN, -2000);
+    homingMotor(motore3, ENDSTOP_Z_PIN, -2000);
+    homingMotor(motore4, ENDSTOP_A_PIN, -2000);
+    target1 = target2 = target3 = target4 = 0;
+    Serial.println("HOMING COMPLETATO");
+    aggiornaDisplay();
+  }
+  else if (comando == "HOME_X") {
+    mostraMessaggio("HOMING X...");
+    homingMotor(motore1, ENDSTOP_X_PIN, -2000);
+    target1 = 0;
+    Serial.println("HOMING COMPLETATO");
+    aggiornaDisplay();
+  }
+  else if (comando == "HOME_Y") {
+    mostraMessaggio("HOMING Y...");
+    homingMotor(motore2, ENDSTOP_Y_PIN, -2000);
+    target2 = 0;
+    Serial.println("HOMING COMPLETATO");
+    aggiornaDisplay();
+  }
+  else if (comando == "HOME_Z") {
+    mostraMessaggio("HOMING Z...");
+    homingMotor(motore3, ENDSTOP_Z_PIN, -2000);
+    target3 = 0;
+    Serial.println("HOMING COMPLETATO");
+    aggiornaDisplay();
+  }
+  else if (comando == "HOME_A") {
+    mostraMessaggio("HOMING A...");
+    homingMotor(motore4, ENDSTOP_A_PIN, -2000);
+    target3 = 0;
+    Serial.println("HOMING COMPLETATO");
+    aggiornaDisplay();
+  }
+  else if (comando.startsWith("EMERGENCY_STOP")) {
+    motore1.stop();
+    motore1.setCurrentPosition(motore1.currentPosition());
+    motore1Completato = true;
+    motore2.stop();
+    motore2.setCurrentPosition(motore2.currentPosition());
+    motore2Completato = true;
+    motore3.stop();
+    motore3.setCurrentPosition(motore3.currentPosition());
+    motore3Completato = true;
+    motore4.stop();
+    motore4.setCurrentPosition(motore4.currentPosition());
+    motore4Completato = true;
+    eseguiMovimento = false; 
+  }
   else if (comando.startsWith("Y:")) {
     yTargetTemp = parseTarget(comando);
     mostraMessaggio("Y:" + String(yTargetTemp));
@@ -235,8 +371,9 @@ void ComandReceived(String comando) {
     digitalWrite(transistorPin, stato == 1 ? HIGH : LOW);
     Serial.println("ok");
     mostraMessaggio("C:" + String(stato));
-  } else if (comando.startsWith("CFG:")) {
-    setConfiguration(comando.substring(4));
+  } else if (comando.indexOf("CFG:") >= 0) {
+    String cleanCommand = comando.substring(comando.indexOf("CFG:") + 4);
+    setConfiguration(cleanCommand);
     Serial.println("ok");
   }
 }
@@ -258,31 +395,109 @@ int parseTarget(String comando) {
 
 // Configura i parametri dei motori
 void setConfiguration(String config) {
-  String param = config.substring(0, config.indexOf(":"));
-  String value = config.substring(config.indexOf(":") + 1);
+  Serial.println(">>> setConfiguration ricevuto: [" + config + "]");
+
+  int sepIndex = config.indexOf(":");
+  if (sepIndex == -1) {
+    Serial.println("⚠️ Errore: formato parametro non valido");
+    return;
+  }
+
+  String param = config.substring(0, sepIndex);
+  String value = config.substring(sepIndex + 1);
   int intValue = value.toInt();
+
+  Serial.println("Parametro: [" + param + "] Valore: [" + value + "]");
 
   if (param == "passiPerGiro") {
     passiPerGiro = intValue;
-    passiPerGrado = (double)(passiPerGiro * microstep) / 360.0;
-    Serial.println("Passi per giro aggiornati");
+    Serial.println("✅ passiPerGiro aggiornato: " + String(passiPerGiro));
   } else if (param == "microstep") {
     microstep = intValue;
-    passiPerGrado = (double)(passiPerGiro * microstep) / 360.0;
-    Serial.println("Microstep aggiornati");
+    Serial.println("✅ microstep aggiornato: " + String(microstep));
   } else if (param == "maxSpeed") {
     maxSpeed = intValue;
     motore1.setMaxSpeed(maxSpeed);
     motore2.setMaxSpeed(maxSpeed);
     motore3.setMaxSpeed(maxSpeed);
     motore4.setMaxSpeed(maxSpeed);
-    Serial.println("Max speed aggiornata");
+    Serial.println("✅ maxSpeed aggiornato: " + String(maxSpeed));
   } else if (param == "maxAccel") {
     maxAccel = intValue;
     motore1.setAcceleration(maxAccel);
     motore2.setAcceleration(maxAccel);
     motore3.setAcceleration(maxAccel);
     motore4.setAcceleration(maxAccel);
-    Serial.println("Max acceleration aggiornata");
+    Serial.println("✅ maxAccel aggiornato: " + String(maxAccel));
+  } else {
+    Serial.println("⚠️ Parametro sconosciuto: " + param);
   }
+
+  passiPerGrado = (double)(passiPerGiro * microstep) / 360.0;
+  Serial.println("🔁 Calcolo passiPerGrado: " + String(passiPerGrado));
+}
+
+
+void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa) {
+
+  if (ENDSTOP_ENABLED == 0) {
+    Serial.println("Endstop disabilitato: homing saltato.");
+    lcd.setCursor(0, 0);
+    lcd.print("Homing disabilitato");
+    delay(1000);
+    lcd.clear();
+    aggiornaDisplay();
+    return;
+  }
+
+  Serial.print("Inizio homing pin ");
+  lcd.setCursor(0, 0);
+  lcd.print("Homing in corso...        ");
+  Serial.println(endstopPin);
+
+  // 🔧 Salva configurazione corrente
+  float prevMaxSpeed = motore.maxSpeed();
+  float prevAcceleration = motore.acceleration();
+
+  motore.enableOutputs();
+  motore.setMaxSpeed(abs(velocitaNegativa));
+  motore.setAcceleration(500); // opzionale: ometti se non vuoi toccarla
+  motore.setSpeed(velocitaNegativa);
+
+  unsigned long startTime = millis();
+
+  while (digitalRead(endstopPin) == HIGH && millis() - startTime < 10000) {
+    motore.runSpeed();
+  }
+
+  if (digitalRead(endstopPin) == HIGH) {
+    Serial.println("⚠️ Finecorsa non raggiunto entro timeout!");
+  }
+
+  motore.stop();
+  motore.setCurrentPosition(0);
+  Serial.println("Homing completato");
+
+  // ⚙️ Backoff
+  int gradiBackoff = 5;
+  long passiBackoff = gradiBackoff * passiPerGrado;
+
+  Serial.print("Ritorno indietro di ");
+  Serial.print(gradiBackoff);
+  Serial.println(" gradi per rilasciare finecorsa");
+
+  motore.moveTo(passiBackoff);
+  while (motore.distanceToGo() != 0) {
+    motore.run();
+  }
+
+  motore.setCurrentPosition(0);
+  Serial.println("Backoff completato");
+
+  // 🔁 Ripristina la configurazione originale
+  motore.setMaxSpeed(prevMaxSpeed);
+  motore.setAcceleration(prevAcceleration);
+
+  lcd.setCursor(0, 0);
+  lcd.print("Pronto          ");
 }

@@ -18,6 +18,8 @@ namespace Braccio_Robotico
         private SerialManager serialManager;
         private MovimentoManager movimentoManager = new MovimentoManager();
         private string MagState = "C:0";
+        private bool EndStopEnabled = true;
+        private bool Running = false;
         private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
         public FrmMain()
         {
@@ -194,22 +196,24 @@ namespace Braccio_Robotico
         }
 
         private void btnGoAll_Click(object sender, EventArgs e)
-        {
+        { 
             serialManager.Write($"X:{trackBar2.Value}");
             serialManager.Write($"Y:{trackBarBase.Value}");
             serialManager.Write($"Z:{trackBar1.Value}");
             serialManager.Write($"A:{trackBar3.Value}");
             serialManager.Write($"{MagState}");
-            serialManager.Write("EXEC"); 
+            serialManager.Write("EXEC");
+            Running = true; 
         }
 
         private void GoHome()
-        {
+        { 
+            serialManager.Write("HOME");
             trackBarBase.Value = 0;
             trackBar1.Value = 0;
             trackBar2.Value = 0;
             trackBar3.Value = 0;
-            btnGoAll_Click(this, EventArgs.Empty);
+
         }
 
         private void kryptonButton1_Click(object sender, EventArgs e)
@@ -436,7 +440,50 @@ namespace Braccio_Robotico
         {
             Console.WriteLine("Errore nel parsing NEWPOSITION: " + ex.Message);
         }
-    }
+        }
+           
+        private void btnESDisabled_Click(object sender, EventArgs e)
+        {
+            if (EndStopEnabled)
+                serialManager.Write("ENDSTOP_ENABLED_0");
+            else
+                serialManager.Write("ENDSTOP_ENABLED_1");
 
+            EndStopEnabled = !EndStopEnabled;
+
+            if (EndStopEnabled) btnESDisabled.StateCommon.Back.Color1 = Color.White; else btnESDisabled.StateCommon.Back.Color1 = Color.Red;
+
+            btnESDisabled.StateNormal.Back.Color1 = btnESDisabled.StateCommon.Back.Color1;
+            btnESDisabled.StatePressed.Back.Color1 = btnESDisabled.StateCommon.Back.Color1;
+        }
+
+        private void btnSTOP_Click(object sender, EventArgs e)
+        {
+            serialManager.Write("EMERGENCY_STOP");
+        }
+
+        private void btnGoHome4_Click(object sender, EventArgs e)
+        {
+            serialManager.Write("HOME_Y");
+            trackBarBase.Value = 0; 
+        }
+
+        private void btnGoHome3_Click(object sender, EventArgs e)
+        {
+            serialManager.Write("HOME_X");
+            trackBar2.Value = 0;
+        }
+
+        private void btnGoHome2_Click(object sender, EventArgs e)
+        {
+            serialManager.Write("HOME_Z");
+            trackBar1.Value = 0;
+        }
+
+        private void btnGoHome1_Click(object sender, EventArgs e)
+        {
+            serialManager.Write("HOME_A");
+            trackBar3.Value = 0;
+        }
     }
 }

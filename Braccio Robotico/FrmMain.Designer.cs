@@ -61,6 +61,12 @@
             this.kryptonGroupBox1 = new Krypton.Toolkit.KryptonGroupBox();
             this.pnlSimulation = new System.Windows.Forms.Panel();
             this.BtnSetHome = new Krypton.Toolkit.KryptonButton();
+            this.btnESDisabled = new Krypton.Toolkit.KryptonButton();
+            this.btnGoHome1 = new Krypton.Toolkit.KryptonButton();
+            this.btnGoHome2 = new Krypton.Toolkit.KryptonButton();
+            this.btnGoHome3 = new Krypton.Toolkit.KryptonButton();
+            this.btnGoHome4 = new Krypton.Toolkit.KryptonButton();
+            this.btnSTOP = new Krypton.Toolkit.KryptonButton();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -93,7 +99,7 @@
             this.listBoxPositions.FormattingEnabled = true;
             this.listBoxPositions.Location = new System.Drawing.Point(6, 45);
             this.listBoxPositions.Name = "listBoxPositions";
-            this.listBoxPositions.Size = new System.Drawing.Size(306, 589);
+            this.listBoxPositions.Size = new System.Drawing.Size(305, 823);
             this.listBoxPositions.TabIndex = 16;
             // 
             // listViewLog
@@ -110,7 +116,7 @@
             this.listViewLog.HideSelection = false;
             this.listViewLog.Location = new System.Drawing.Point(6, 6);
             this.listViewLog.Name = "listViewLog";
-            this.listViewLog.Size = new System.Drawing.Size(478, 626);
+            this.listViewLog.Size = new System.Drawing.Size(555, 867);
             this.listViewLog.TabIndex = 19;
             this.listViewLog.UseCompatibleStateImageBehavior = false;
             this.listViewLog.View = System.Windows.Forms.View.Details;
@@ -213,9 +219,8 @@
             // 
             // trackBar3
             // 
-            this.trackBar3.Location = new System.Drawing.Point(12, 92);
-            this.trackBar3.Maximum = 180;
-            this.trackBar3.Minimum = -180;
+            this.trackBar3.Location = new System.Drawing.Point(12, 91);
+            this.trackBar3.Maximum = 360;
             this.trackBar3.Name = "trackBar3";
             this.trackBar3.Size = new System.Drawing.Size(686, 34);
             this.trackBar3.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -231,9 +236,8 @@
             // 
             // trackBar2
             // 
-            this.trackBar2.Location = new System.Drawing.Point(12, 168);
-            this.trackBar2.Maximum = 180;
-            this.trackBar2.Minimum = -180;
+            this.trackBar2.Location = new System.Drawing.Point(12, 169);
+            this.trackBar2.Maximum = 360;
             this.trackBar2.Name = "trackBar2";
             this.trackBar2.Size = new System.Drawing.Size(686, 34);
             this.trackBar2.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -249,9 +253,8 @@
             // 
             // trackBar1
             // 
-            this.trackBar1.Location = new System.Drawing.Point(11, 128);
-            this.trackBar1.Maximum = 180;
-            this.trackBar1.Minimum = -180;
+            this.trackBar1.Location = new System.Drawing.Point(11, 131);
+            this.trackBar1.Maximum = 360;
             this.trackBar1.Name = "trackBar1";
             this.trackBar1.Size = new System.Drawing.Size(686, 34);
             this.trackBar1.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -267,9 +270,8 @@
             // 
             // trackBarBase
             // 
-            this.trackBarBase.Location = new System.Drawing.Point(12, 208);
-            this.trackBarBase.Maximum = 180;
-            this.trackBarBase.Minimum = -180;
+            this.trackBarBase.Location = new System.Drawing.Point(12, 207);
+            this.trackBarBase.Maximum = 360;
             this.trackBarBase.Name = "trackBarBase";
             this.trackBarBase.Size = new System.Drawing.Size(686, 34);
             this.trackBarBase.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -285,19 +287,26 @@
             // 
             // btnGoAll
             // 
-            this.btnGoAll.Location = new System.Drawing.Point(781, 91);
+            this.btnGoAll.Location = new System.Drawing.Point(860, 90);
             this.btnGoAll.Name = "btnGoAll";
-            this.btnGoAll.Size = new System.Drawing.Size(68, 66);
+            this.btnGoAll.Size = new System.Drawing.Size(109, 108);
+            this.btnGoAll.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
+            this.btnGoAll.StateCommon.Back.Color2 = System.Drawing.Color.Lime;
+            this.btnGoAll.StateCommon.Border.Rounding = 100F;
+            this.btnGoAll.StateCommon.Border.Width = 2;
+            this.btnGoAll.StateCommon.Content.ShortText.Color1 = System.Drawing.Color.White;
+            this.btnGoAll.StateCommon.Content.ShortText.Color2 = System.Drawing.Color.White;
+            this.btnGoAll.StateCommon.Content.ShortText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnGoAll.TabIndex = 32;
             this.btnGoAll.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.btnGoAll.Values.Text = "GO ALL";
+            this.btnGoAll.Values.Text = "PLAY";
             this.btnGoAll.Click += new System.EventHandler(this.btnGoAll_Click);
             // 
             // kryptonButton1
             // 
-            this.kryptonButton1.Location = new System.Drawing.Point(781, 168);
+            this.kryptonButton1.Location = new System.Drawing.Point(860, 207);
             this.kryptonButton1.Name = "kryptonButton1";
-            this.kryptonButton1.Size = new System.Drawing.Size(68, 70);
+            this.kryptonButton1.Size = new System.Drawing.Size(117, 31);
             this.kryptonButton1.TabIndex = 33;
             this.kryptonButton1.Values.DropDownArrowColor = System.Drawing.Color.Empty;
             this.kryptonButton1.Values.Text = "Go Home";
@@ -305,9 +314,9 @@
             // 
             // btnConfig
             // 
-            this.btnConfig.Location = new System.Drawing.Point(781, 19);
+            this.btnConfig.Location = new System.Drawing.Point(813, 20);
             this.btnConfig.Name = "btnConfig";
-            this.btnConfig.Size = new System.Drawing.Size(68, 66);
+            this.btnConfig.Size = new System.Drawing.Size(117, 66);
             this.btnConfig.TabIndex = 38;
             this.btnConfig.Values.DropDownArrowColor = System.Drawing.Color.Empty;
             this.btnConfig.Values.Text = "Config";
@@ -365,13 +374,13 @@
             this.GrpSavePosition.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.GrpSavePosition.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
-            this.GrpSavePosition.Location = new System.Drawing.Point(860, 12);
+            this.GrpSavePosition.Location = new System.Drawing.Point(1254, 12);
             // 
             // GrpSavePosition.Panel
             // 
             this.GrpSavePosition.Panel.Controls.Add(this.listBoxPositions);
             this.GrpSavePosition.Panel.Controls.Add(this.panel1);
-            this.GrpSavePosition.Size = new System.Drawing.Size(322, 659);
+            this.GrpSavePosition.Size = new System.Drawing.Size(321, 900);
             this.GrpSavePosition.TabIndex = 43;
             this.GrpSavePosition.Values.Heading = "Save Positions";
             // 
@@ -381,12 +390,12 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.GrpLog.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
-            this.GrpLog.Location = new System.Drawing.Point(1188, 12);
+            this.GrpLog.Location = new System.Drawing.Point(1581, 12);
             // 
             // GrpLog.Panel
             // 
             this.GrpLog.Panel.Controls.Add(this.listViewLog);
-            this.GrpLog.Size = new System.Drawing.Size(493, 659);
+            this.GrpLog.Size = new System.Drawing.Size(570, 900);
             this.GrpLog.TabIndex = 45;
             this.GrpLog.Values.Heading = "Logs";
             // 
@@ -407,14 +416,14 @@
             0,
             0,
             0});
-            this.trackBarNumeric3.Location = new System.Drawing.Point(704, 92);
+            this.trackBarNumeric3.Location = new System.Drawing.Point(704, 91);
             this.trackBarNumeric3.Maximum = new decimal(new int[] {
-            180,
+            360,
             0,
             0,
             0});
             this.trackBarNumeric3.Minimum = new decimal(new int[] {
-            180,
+            360,
             0,
             0,
             -2147483648});
@@ -436,9 +445,9 @@
             0,
             0,
             0});
-            this.trackBarNumeric1.Location = new System.Drawing.Point(704, 128);
+            this.trackBarNumeric1.Location = new System.Drawing.Point(704, 131);
             this.trackBarNumeric1.Maximum = new decimal(new int[] {
-            180,
+            360,
             0,
             0,
             0});
@@ -465,9 +474,9 @@
             0,
             0,
             0});
-            this.trackBarNumeric2.Location = new System.Drawing.Point(704, 168);
+            this.trackBarNumeric2.Location = new System.Drawing.Point(704, 169);
             this.trackBarNumeric2.Maximum = new decimal(new int[] {
-            180,
+            360,
             0,
             0,
             0});
@@ -494,9 +503,9 @@
             0,
             0,
             0});
-            this.trackBarNumericBase.Location = new System.Drawing.Point(704, 208);
+            this.trackBarNumericBase.Location = new System.Drawing.Point(704, 207);
             this.trackBarNumericBase.Maximum = new decimal(new int[] {
-            180,
+            360,
             0,
             0,
             0});
@@ -526,7 +535,7 @@
             // kryptonGroupBox1.Panel
             // 
             this.kryptonGroupBox1.Panel.Controls.Add(this.pnlSimulation);
-            this.kryptonGroupBox1.Size = new System.Drawing.Size(842, 423);
+            this.kryptonGroupBox1.Size = new System.Drawing.Size(1236, 664);
             this.kryptonGroupBox1.TabIndex = 53;
             this.kryptonGroupBox1.Values.Heading = "Graph";
             // 
@@ -535,7 +544,7 @@
             this.pnlSimulation.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlSimulation.Location = new System.Drawing.Point(0, 0);
             this.pnlSimulation.Name = "pnlSimulation";
-            this.pnlSimulation.Size = new System.Drawing.Size(838, 401);
+            this.pnlSimulation.Size = new System.Drawing.Size(1232, 642);
             this.pnlSimulation.TabIndex = 54;
             // 
             // BtnSetHome
@@ -548,11 +557,91 @@
             this.BtnSetHome.Values.Text = "Set Home";
             this.BtnSetHome.Click += new System.EventHandler(this.BtnSetHome_Click);
             // 
+            // btnESDisabled
+            // 
+            this.btnESDisabled.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
+            this.btnESDisabled.Location = new System.Drawing.Point(739, 20);
+            this.btnESDisabled.Name = "btnESDisabled";
+            this.btnESDisabled.Size = new System.Drawing.Size(68, 66);
+            this.btnESDisabled.StateCommon.Back.Color1 = System.Drawing.Color.White;
+            this.btnESDisabled.TabIndex = 55;
+            this.btnESDisabled.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnESDisabled.Values.Text = "E/S";
+            this.btnESDisabled.Click += new System.EventHandler(this.btnESDisabled_Click);
+            // 
+            // btnGoHome1
+            // 
+            this.btnGoHome1.Location = new System.Drawing.Point(781, 91);
+            this.btnGoHome1.Name = "btnGoHome1";
+            this.btnGoHome1.Size = new System.Drawing.Size(73, 31);
+            this.btnGoHome1.TabIndex = 56;
+            this.btnGoHome1.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnGoHome1.Values.Text = "Go Home";
+            this.btnGoHome1.Click += new System.EventHandler(this.btnGoHome1_Click);
+            // 
+            // btnGoHome2
+            // 
+            this.btnGoHome2.Location = new System.Drawing.Point(781, 131);
+            this.btnGoHome2.Name = "btnGoHome2";
+            this.btnGoHome2.Size = new System.Drawing.Size(73, 29);
+            this.btnGoHome2.TabIndex = 57;
+            this.btnGoHome2.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnGoHome2.Values.Text = "Go Home";
+            this.btnGoHome2.Click += new System.EventHandler(this.btnGoHome2_Click);
+            // 
+            // btnGoHome3
+            // 
+            this.btnGoHome3.Location = new System.Drawing.Point(781, 169);
+            this.btnGoHome3.Name = "btnGoHome3";
+            this.btnGoHome3.Size = new System.Drawing.Size(73, 29);
+            this.btnGoHome3.TabIndex = 58;
+            this.btnGoHome3.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnGoHome3.Values.Text = "Go Home";
+            this.btnGoHome3.Click += new System.EventHandler(this.btnGoHome3_Click);
+            // 
+            // btnGoHome4
+            // 
+            this.btnGoHome4.Location = new System.Drawing.Point(781, 207);
+            this.btnGoHome4.Name = "btnGoHome4";
+            this.btnGoHome4.Size = new System.Drawing.Size(73, 29);
+            this.btnGoHome4.TabIndex = 59;
+            this.btnGoHome4.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnGoHome4.Values.Text = "Go Home";
+            this.btnGoHome4.Click += new System.EventHandler(this.btnGoHome4_Click);
+            // 
+            // btnSTOP
+            // 
+            this.btnSTOP.Location = new System.Drawing.Point(975, 90);
+            this.btnSTOP.Name = "btnSTOP";
+            this.btnSTOP.Size = new System.Drawing.Size(109, 108);
+            this.btnSTOP.StateCommon.Back.Color1 = System.Drawing.Color.Red;
+            this.btnSTOP.StateCommon.Back.Color2 = System.Drawing.Color.Red;
+            this.btnSTOP.StateCommon.Border.Color1 = System.Drawing.Color.Black;
+            this.btnSTOP.StateCommon.Border.Color2 = System.Drawing.Color.Black;
+            this.btnSTOP.StateCommon.Border.Rounding = 100F;
+            this.btnSTOP.StateCommon.Content.LongText.Color1 = System.Drawing.Color.White;
+            this.btnSTOP.StateCommon.Content.LongText.Color2 = System.Drawing.Color.White;
+            this.btnSTOP.StateCommon.Content.ShortText.Color1 = System.Drawing.Color.White;
+            this.btnSTOP.StateCommon.Content.ShortText.Color2 = System.Drawing.Color.White;
+            this.btnSTOP.StateCommon.Content.ShortText.ColorStyle = Krypton.Toolkit.PaletteColorStyle.Solid;
+            this.btnSTOP.StateCommon.Content.ShortText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSTOP.TabIndex = 60;
+            this.btnSTOP.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnSTOP.Values.Text = "STOP";
+            this.btnSTOP.Click += new System.EventHandler(this.btnSTOP_Click);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1693, 683);
+            this.ClientSize = new System.Drawing.Size(2163, 924);
+            this.Controls.Add(this.btnSTOP);
+            this.Controls.Add(this.btnGoHome4);
+            this.Controls.Add(this.btnGoAll);
+            this.Controls.Add(this.btnGoHome3);
+            this.Controls.Add(this.btnGoHome2);
+            this.Controls.Add(this.btnGoHome1);
+            this.Controls.Add(this.btnESDisabled);
             this.Controls.Add(this.BtnSetHome);
             this.Controls.Add(this.kryptonGroupBox1);
             this.Controls.Add(this.trackBarNumericBase);
@@ -565,7 +654,6 @@
             this.Controls.Add(this.GrpComPorts);
             this.Controls.Add(this.btnConfig);
             this.Controls.Add(this.kryptonButton1);
-            this.Controls.Add(this.btnGoAll);
             this.Controls.Add(this.trackBarBase);
             this.Controls.Add(this.trackBar1);
             this.Controls.Add(this.trackBar2);
@@ -636,6 +724,12 @@
         private Krypton.Toolkit.KryptonGroupBox kryptonGroupBox1;
         private System.Windows.Forms.Panel pnlSimulation;
         private Krypton.Toolkit.KryptonButton BtnSetHome;
+        private Krypton.Toolkit.KryptonButton btnESDisabled;
+        private Krypton.Toolkit.KryptonButton btnGoHome1;
+        private Krypton.Toolkit.KryptonButton btnGoHome2;
+        private Krypton.Toolkit.KryptonButton btnGoHome3;
+        private Krypton.Toolkit.KryptonButton btnGoHome4;
+        private Krypton.Toolkit.KryptonButton btnSTOP;
     }
 }
 
