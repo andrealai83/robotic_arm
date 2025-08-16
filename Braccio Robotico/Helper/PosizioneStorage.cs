@@ -34,10 +34,10 @@ namespace Braccio_Robotico.Helper
                                                         VALUES (@pid, @ordine, @x, @y, @z, @a, @c);", conn, tr);
                         insertMov.Parameters.AddWithValue("@pid", posId);
                         insertMov.Parameters.AddWithValue("@ordine", ordine++);
-                        insertMov.Parameters.AddWithValue("@x", m.X);
-                        insertMov.Parameters.AddWithValue("@y", m.Y);
-                        insertMov.Parameters.AddWithValue("@z", m.Z);
-                        insertMov.Parameters.AddWithValue("@a", m.A);
+                        insertMov.Parameters.AddWithValue("@x", m.M1);
+                        insertMov.Parameters.AddWithValue("@y", m.M2);
+                        insertMov.Parameters.AddWithValue("@z", m.M4);
+                        insertMov.Parameters.AddWithValue("@a", m.M3);
                         insertMov.Parameters.AddWithValue("@c", m.C);
                         insertMov.ExecuteNonQuery();
                     }
@@ -65,10 +65,10 @@ namespace Braccio_Robotico.Helper
                     {
                         lista.Add(new Movimento
                         {
-                            X = reader.GetInt32(0),
-                            Y = reader.GetInt32(1),
-                            Z = reader.GetInt32(2),
-                            A = reader.GetInt32(3),
+                            M1 = reader.GetInt32(0),
+                            M2 = reader.GetInt32(1),
+                            M4 = reader.GetInt32(2),
+                            M3 = reader.GetInt32(3),
                             C = reader.GetString(4)
                         });
                     }

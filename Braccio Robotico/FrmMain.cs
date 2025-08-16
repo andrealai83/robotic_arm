@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.IO.Ports;
+using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,6 +21,7 @@ namespace Braccio_Robotico
         private SerialManager serialManager;
         private MovimentoManager movimentoManager = new MovimentoManager();
         private string MagState = "C:0";
+        private string MotorState = "ENA:1";
         private bool EndStopEnabled = true;
         private bool Running = false;
         private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
@@ -43,7 +47,7 @@ namespace Braccio_Robotico
             listViewLog.Items.Add(item);
             listViewLog.Items[listViewLog.Items.Count - 1].EnsureVisible();
              
-            AggiornaTrackbarDaPosizione(message);
+            //AggiornaTrackbarDaPosizione(message);
         }
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -60,7 +64,7 @@ namespace Braccio_Robotico
              );
 
             if (serialManager.Port.IsOpen)
-            {
+            { 
                 btnConnect.Enabled = false;
                 btnDisconnect.Enabled = true; 
                 RobotConfig.SendConfiguration(serialManager.Port);
@@ -91,10 +95,10 @@ namespace Braccio_Robotico
         { 
             var mov = new Movimento
             {
-                Y = trackBarBase.Value,
-                X = trackBar2.Value,
-                Z = trackBar1.Value,
-                A = trackBar3.Value,
+                M2 = trackBar2.Value,
+                M1 = trackBar1.Value,
+                M4 = trackBar4.Value,
+                M3 = trackBar3.Value,
                 C = MagState
             };
 
@@ -115,15 +119,15 @@ namespace Braccio_Robotico
             {
                 try
                 {
-                    string comando = $"X:{movi.X}\nY:{movi.Y}\nZ:{movi.Z}\nA:{movi.A}\n{movi.C}\nRUN\n";
+                    string comando = $"M1:{movi.M1}\nM3:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.C}\nRUN\n";
                     serialManager.Port.Write(comando);
                     history.Add(movi);  
 
                     viewer3D.UpdateAngles(
-                         movi.Y,    // Y → base
-                         movi.X,    // X → snodo 1
-                         movi.Z,    // Z → snodo 2
-                         movi.A     // A → snodo 3 (calamita)
+                         movi.M2,    // Y → base
+                         movi.M1,    // X → snodo 1
+                         movi.M4,    // Z → snodo 2
+                         movi.M3     // A → snodo 3 (calamita)
                      );
 
                     LogMessage($"Command sent:\n{comando}");
@@ -196,22 +200,24 @@ namespace Braccio_Robotico
         }
 
         private void btnGoAll_Click(object sender, EventArgs e)
-        { 
-            serialManager.Write($"X:{trackBar2.Value}");
-            serialManager.Write($"Y:{trackBarBase.Value}");
-            serialManager.Write($"Z:{trackBar1.Value}");
-            serialManager.Write($"A:{trackBar3.Value}");
-            serialManager.Write($"{MagState}");
-            serialManager.Write("EXEC");
-            Running = true; 
+        {
+            string command = $"M1:{trackBar1.Value};" +
+                     $"M2:{trackBar2.Value};" +
+                     $"M3:{trackBar3.Value};" +
+                     $"M4:{trackBar4.Value};" +
+                     $"{MagState};" +
+                     "EXEC\n";
+
+            serialManager.Write(command);
+            Running = true;
         }
 
         private void GoHome()
         { 
             serialManager.Write("HOME");
-            trackBarBase.Value = 0;
-            trackBar1.Value = 0;
             trackBar2.Value = 0;
+            trackBar4.Value = 0;
+            trackBar1.Value = 0;
             trackBar3.Value = 0;
 
         }
@@ -240,60 +246,51 @@ namespace Braccio_Robotico
             magnetOFF.Enabled = state;
         }
 
-        private void trackBarBase_ValueChanged(object sender, EventArgs e)
+        private void ToggleMotor(bool state)
         {
-            trackBarNumericBase.Value = trackBarBase.Value;
-            var mov = new Movimento
-            {
-                Y = trackBarBase.Value,
-                X = trackBar2.Value,
-                Z = trackBar1.Value,
-                A = trackBar3.Value,
-                C = MagState
-            };
-            viewer3D.UpdateAngles(
-                 trackBarBase.Value,  // Y → base
-                 trackBar2.Value,     // X → snodo 1
-                 trackBar1.Value,     // Z → snodo 2
-                 trackBar3.Value      // A → snodo 3 (calamita)
-             ); 
+            MotorState = state ? "ENA:1" : "ENA:0";
+            serialManager.Write(MotorState);
+            grpMotor.Text = state ? "Motor state (ON)" : "Motor state (OFF)";
+            btnMotorON.Enabled = !state;
+            btnMotorOFF.Enabled = state;
         }
+
 
         private void trackBar1_ValueChanged(object sender, EventArgs e)
         {
             trackBarNumeric1.Value = trackBar1.Value;
             var mov = new Movimento
             {
-                Y = trackBarBase.Value,
-                X = trackBar2.Value,
-                Z = trackBar1.Value,
-                A = trackBar3.Value,
+                M1 = trackBar1.Value,
+                M2 = trackBar2.Value,
+                M3 = trackBar3.Value,
+                M4 = trackBar4.Value,
                 C = MagState
             };
 
             viewer3D.UpdateAngles(
-                 trackBarBase.Value,  // Y → base
-                 trackBar2.Value,     // X → snodo 1
-                 trackBar1.Value,     // Z → snodo 2
+                 trackBar2.Value,  // Y → base
+                 trackBar1.Value,     // X → snodo 1
+                 trackBar4.Value,     // Z → snodo 2
                  trackBar3.Value      // A → snodo 3 (calamita)
              ); 
         }
 
         private void trackBar2_ValueChanged(object sender, EventArgs e)
         {
-            trackBarNumeric2.Value = trackBar2.Value;
+            trackBarNumeric1.Value = trackBar1.Value;
             var mov = new Movimento
             {
-                Y = trackBarBase.Value,
-                X = trackBar2.Value,
-                Z = trackBar1.Value,
-                A = trackBar3.Value,
+                M1 = trackBar1.Value,
+                M2 = trackBar2.Value,
+                M3 = trackBar3.Value,
+                M4 = trackBar4.Value,
                 C = MagState
             };
             viewer3D.UpdateAngles(
-                 trackBarBase.Value,  // Y → base
-                 trackBar2.Value,     // X → snodo 1
-                 trackBar1.Value,     // Z → snodo 2
+                 trackBar2.Value,  // Y → base
+                 trackBar1.Value,     // X → snodo 1
+                 trackBar4.Value,     // Z → snodo 2
                  trackBar3.Value      // A → snodo 3 (calamita)
              ); 
         }
@@ -304,19 +301,40 @@ namespace Braccio_Robotico
 
             var mov = new Movimento
             {
-                Y = trackBarBase.Value,
-                X = trackBar2.Value,
-                Z = trackBar1.Value,
-                A = trackBar3.Value,
+                M1 = trackBar1.Value,
+                M2 = trackBar2.Value,
+                M3 = trackBar3.Value,
+                M4 = trackBar4.Value,
                 C = MagState
             };
 
             viewer3D.UpdateAngles(
-                 trackBarBase.Value,  // Y → base
-                 trackBar2.Value,     // X → snodo 1
-                 trackBar1.Value,     // Z → snodo 2
+                 trackBar2.Value,  // Y → base
+                 trackBar1.Value,     // X → snodo 1
+                 trackBar4.Value,     // Z → snodo 2
                  trackBar3.Value      // A → snodo 3 (calamita)
              ); 
+        }
+
+        private void trackBar4_ValueChanged(object sender, EventArgs e)
+        {
+            trackBarNumeric4.Value = trackBar4.Value;
+
+            var mov = new Movimento
+            {
+                M1 = trackBar1.Value,
+                M2 = trackBar2.Value,
+                M3 = trackBar3.Value,
+                M4 = trackBar4.Value, 
+                C = MagState
+            };
+
+            viewer3D.UpdateAngles(
+                 trackBar2.Value,  // Y → base
+                 trackBar1.Value,     // X → snodo 1
+                 trackBar4.Value,     // Z → snodo 2
+                 trackBar3.Value      // A → snodo 3 (calamita)
+             );
         }
 
         private void btnConfig_Click(object sender, EventArgs e)
@@ -344,17 +362,17 @@ namespace Braccio_Robotico
 
         private void trackBarNumeric3_ValueChanged(object sender, EventArgs e)
         {
-            trackBar3.Value = int.Parse(trackBarNumeric3.Value.ToString());
+           trackBar3.Value = int.Parse(trackBarNumeric3.Value.ToString());
         }
 
         private void trackBarNumeric1_ValueChanged(object sender, EventArgs e)
         {
-            trackBar1.Value = int.Parse(trackBarNumeric1.Value.ToString());
+            trackBar4.Value = int.Parse(trackBarNumeric4.Value.ToString());
         }
 
         private void trackBarNumericBase_ValueChanged(object sender, EventArgs e)
         {
-            trackBarBase.Value = int.Parse(trackBarNumericBase.Value.ToString());
+           trackBar2.Value = int.Parse(trackBarNumeric2.Value.ToString());
         }
 
         private void trackBarNumeric2_ValueChanged(object sender, EventArgs e)
@@ -362,11 +380,16 @@ namespace Braccio_Robotico
             trackBar2.Value = int.Parse(trackBarNumeric2.Value.ToString());
         }
 
+        private void trackBarNumeric4_ValueChanged(object sender, EventArgs e)
+        {
+            trackBar4.Value = int.Parse(trackBarNumeric4.Value.ToString());
+        }
+
         private void BtnSetHome_Click(object sender, EventArgs e)
         {
-            trackBar2.Value = 0;
-            trackBarBase.Value = 0;
             trackBar1.Value = 0;
+            trackBar2.Value = 0;
+            trackBar4.Value = 0;
             trackBar3.Value = 0;
 
             serialManager.Write("SETHOME");
@@ -406,9 +429,9 @@ namespace Braccio_Robotico
             }
 
             // Imposta i valori sui TrackBar e i NumericUpDown
-            trackBar2.Value = Math.Max(trackBar2.Minimum, Math.Min(trackBar2.Maximum, x));
-            trackBarBase.Value = Math.Max(trackBarBase.Minimum, Math.Min(trackBarBase.Maximum, y));
-            trackBar1.Value = Math.Max(trackBar1.Minimum, Math.Min(trackBar1.Maximum, z));
+            trackBar1.Value = Math.Max(trackBar1.Minimum, Math.Min(trackBar1.Maximum, x));
+            trackBar2.Value = Math.Max(trackBar2.Minimum, Math.Min(trackBar2.Maximum, y));
+            trackBar4.Value = Math.Max(trackBar4.Minimum, Math.Min(trackBar4.Maximum, z));
             trackBar3.Value = Math.Max(trackBar3.Minimum, Math.Min(trackBar3.Maximum, a));
                  
             ToggleMagnet(c == 1 ? true : false);
@@ -417,10 +440,10 @@ namespace Braccio_Robotico
                 { 
                     var mov = new Movimento
                     {
-                        Y = trackBarBase.Value,
-                        X = trackBar2.Value,
-                        Z = trackBar1.Value,
-                        A = trackBar3.Value,
+                        M2 = trackBar2.Value,
+                        M1 = trackBar1.Value,
+                        M4 = trackBar4.Value,
+                        M3 = trackBar3.Value,
                         C = MagState
                     };
 
@@ -464,26 +487,102 @@ namespace Braccio_Robotico
 
         private void btnGoHome4_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_Y");
-            trackBarBase.Value = 0; 
+            serialManager.Write("HOME_4");
+            trackBar4.Value = 0; 
         }
 
         private void btnGoHome3_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_X");
-            trackBar2.Value = 0;
+            serialManager.Write("HOME_3");
+            trackBar3.Value = 0;
         }
 
         private void btnGoHome2_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_Z");
-            trackBar1.Value = 0;
+            serialManager.Write("HOME_2");
+            trackBar2.Value = 0;
         }
 
         private void btnGoHome1_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_A");
-            trackBar3.Value = 0;
+            serialManager.Write("HOME_1");
+            trackBar1.Value = 0;
+        }
+
+        private static int Clamp360(int v)
+        {
+            // porta in [0,360)
+            v %= 360;
+            if (v < 0) v += 360;
+            return v;
+        }
+
+
+        private void btnImport_Click(object sender, EventArgs e)
+        {
+            using (var ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Seleziona file posizioni JSON";
+                ofd.Filter = "File JSON (*.json)|*.json|Tutti i file (*.*)|*.*";
+
+                if (ofd.ShowDialog() != DialogResult.OK) return;
+
+                try
+                {
+                    string json = File.ReadAllText(ofd.FileName);
+
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+
+                    var listDto = JsonSerializer.Deserialize<List<Movimento>>(json, options);
+
+                    if (listDto == null || listDto.Count == 0)
+                    {
+                        MessageBox.Show("Il file JSON non contiene posizioni valide.",
+                            "Importazione", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // mappa a int con arrotondamento e clamp
+                    var mapped = listDto.Select(d => new Movimento
+                    {
+                        M1 = Clamp360((int)Math.Round(d.M1)),
+                        M2 = Clamp360((int)Math.Round(d.M2)),
+                        M3 = Clamp360((int)Math.Round(d.M3)),
+                        M4 = Clamp360((int)Math.Round(d.M4)),
+                        C = d.C ?? string.Empty
+                    }).ToList();
+
+                    foreach (var mov in mapped)
+                        movimentoManager.Add(mov);
+
+                    listBoxPositions.Items.Clear();
+                    foreach (var item in movimentoManager.GetFormattedList())
+                        listBoxPositions.Items.Add(item);
+
+                    btnPlayPosition.Enabled = movimentoManager.HasMovements;
+
+                    MessageBox.Show($"{mapped.Count} posizioni importate con successo.",
+                        "Importazione completata", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Errore durante l'importazione: {ex.Message}",
+                        "Errore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnMotorON_Click(object sender, EventArgs e)
+        {
+            ToggleMotor(true);
+        }
+
+        private void btnMotorOFF_Click(object sender, EventArgs e)
+        {
+            ToggleMotor(false);
         }
     }
 }

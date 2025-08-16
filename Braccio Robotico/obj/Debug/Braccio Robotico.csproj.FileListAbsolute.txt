@@ -45,3 +45,15 @@ F:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmManagePosizi
 F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe
 F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.pdb
 F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe.config
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.IO.Pipelines.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Encodings.Web.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Json.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Threading.Tasks.Extensions.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.dll
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.IO.Pipelines.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Encodings.Web.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Json.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Threading.Tasks.Extensions.xml
+F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.xml
