@@ -2,9 +2,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Shapes;
 
 namespace Braccio_Robotico
 {
@@ -89,7 +91,7 @@ namespace Braccio_Robotico
                         {
                             string risposta = serialManager.Port.ReadLine().Trim();
                             Console.WriteLine($"Risposta ricevuta: {risposta}");
-
+                             
                             if (risposta == attesa)
                             {
                                 serialManager.EnableDataReceived();

@@ -24,6 +24,8 @@ void loop() {
   handleButtons();
 
   handleMotors();
+
+  encoderUpdate();
  
   // completamento movimento coordinato
   // if (eseguiMovimento && motore1Completato && motore2Completato && motore3Completato && motore4Completato) {

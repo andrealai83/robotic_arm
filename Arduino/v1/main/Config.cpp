@@ -17,6 +17,7 @@ int ENDSTOP_ENABLED = 1;
 int passiPerGiro = 200;
 int microstep = 4;
 double rapportoPlanetario = 14.2;
+float moltiplicaRapportoPlanetario = 28.0f;
 double passiPerGrado = 0.0;
 int maxSpeed = 7000;
 int maxAccel = 7000;

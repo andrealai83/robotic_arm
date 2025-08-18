@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -40,6 +41,15 @@ namespace Braccio_Robotico
             {
                 listViewLog.Invoke(new Action(() => LogMessage(message)));
                 return;
+            }
+
+            if (message.StartsWith("EN_DEG_M1:"))
+            {
+                if (double.TryParse(message.Substring(10), NumberStyles.Float, CultureInfo.InvariantCulture, out var deg))
+                {
+                    trackBarNumeric1.Value = (int)Math.Round(deg);
+                    trackBar1.Value = (int)Math.Round(deg);
+                }
             }
 
             var item = new ListViewItem(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -166,7 +176,7 @@ namespace Braccio_Robotico
                         {
                             string risposta = serialManager.Port.ReadLine().Trim();
                             Console.WriteLine($"Risposta ricevuta: {risposta}");
-
+                             
                             if (risposta == attesa)
                             {
                                 serialManager.EnableDataReceived();

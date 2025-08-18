@@ -1,6 +1,7 @@
 #include "Motors.h"
 #include "Display.h"
 #include "Config.h"
+#include "Encoder.h"
 
 AccelStepper motore1(AccelStepper::DRIVER, PUL1, DIR1);
 AccelStepper motore2(AccelStepper::DRIVER, PUL2, DIR2);
@@ -40,7 +41,6 @@ void moveAllToDegrees(int g1,int g2,int g3,int g4){
 void handleMotors() {
   if (multiActive) {
     squad.run();
-
     if (motore1.distanceToGo()==0 &&
         motore2.distanceToGo()==0 &&
         motore3.distanceToGo()==0 &&
@@ -72,6 +72,12 @@ void setEnableAll(bool on) {
   digitalWrite(ENA4, level);
 
   encoderStreamOn = !on;
+
+  if (on) {
+    // i motori si stanno disabilitando → non fare nulla
+  } else { 
+    motore1.setCurrentPosition((long)(jointDeg * passiPerGrado)); 
+  }
 }
 
 
@@ -150,5 +156,8 @@ void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa) {
 
   motore.setMaxSpeed(prevMaxSpeed);
   motore.setAcceleration(prevAccel);
+
+  encoderZero();
+
   mostraMessaggio("Pronto");
 }

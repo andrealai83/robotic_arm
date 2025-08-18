@@ -29,6 +29,7 @@ extern int  ENDSTOP_ENABLED;
 extern int passiPerGiro;
 extern int microstep;
 extern double rapportoPlanetario;
+extern float moltiplicaRapportoPlanetario;
 extern double passiPerGrado;
 extern int maxSpeed;
 extern int maxAccel;

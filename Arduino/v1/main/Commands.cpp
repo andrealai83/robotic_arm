@@ -184,10 +184,8 @@ void processToken(const String &cmd)
   if (cmd == "EXEC" || cmd == "RUN")
   {
     // Avvio movimento coordinato (se usi MultiStepper)
-    // moveAllToDegrees(target1, target2, target3, target4);
-    // multiActive = true;
-
-    // Se resti con AccelStepper “singoli”:
+    //moveAllToDegrees(target1, target2, target3, target4);
+    //multiActive = true;
     eseguiMovimento = true;
     mostraMessaggio("EXEC");
     return;
@@ -209,6 +207,42 @@ void processToken(const String &cmd)
     homingMotor(motore3, ENDSTOP_3_PIN, -2000);
     homingMotor(motore4, ENDSTOP_4_PIN, -2000);
     target1 = target2 = target3 = target4 = 0;
+    aggiornaDisplay();
+    return;
+  }
+  if (cmd == "HOME_1")
+  {
+    mostraMessaggio("HOMING 1..."); 
+    homingMotor(motore1, ENDSTOP_1_PIN, -2000); 
+    target1 = 0; 
+    Serial.println("HOMING COMPLETATO"); 
+    aggiornaDisplay();
+    return;
+  } 
+  if (cmd == "HOME_2")
+  {
+    mostraMessaggio("HOMING 2..."); 
+    homingMotor(motore2, ENDSTOP_2_PIN, -2000); 
+    target2 = 0; 
+    Serial.println("HOMING COMPLETATO"); 
+    aggiornaDisplay();
+    return;
+  }
+  if (cmd == "HOME_3")
+  {
+    mostraMessaggio("HOMING 3..."); 
+    homingMotor(motore3, ENDSTOP_3_PIN, -2000); 
+    target3 = 0; 
+    Serial.println("HOMING COMPLETATO"); 
+    aggiornaDisplay();
+    return;
+  }
+  if (cmd == "HOME_4")
+  {
+    mostraMessaggio("HOMING 4..."); 
+    homingMotor(motore4, ENDSTOP_4_PIN, -2000); 
+    target4 = 0; 
+    Serial.println("HOMING COMPLETATO"); 
     aggiornaDisplay();
     return;
   }
