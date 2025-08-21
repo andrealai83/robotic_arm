@@ -1,158 +1,154 @@
-#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <RF24.h>
 #include <U8g2lib.h>
 #include <Wire.h>
 
-SoftwareSerial btSerial(2, 3); // RX, TX
-U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+RF24 radio(9, 10); // CE, CSN
+const byte PIPE_TX[6] = "NODE1";   // Nano -> Mega
+const byte PIPE_RX[6] = "NODE2";   // Mega -> Nano (ready)
 
-// Pin joystick
-int joy1X = A1;  // Base (Y)
-int joy1Y = A2;  // Spalla (X)
-int joy2X = A0;  // Gomito (Z)
-int joy2Y = A3;  // Pinza (A)
-int sw1Pin = 4;  // Pulsante joystick 1
-int sw2Pin = 5;  // Pulsante joystick 2
+U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
-int lastX = 0, lastY = 0, lastZ = 0, lastA = 0;
-bool magnet = false;
+// Joystick/pulsanti
+const int joy1X = A1, joy1Y = A2, joy2X = A0, joy2Y = A3;
+const int sw1Pin = 4, sw2Pin = 5;
+const int sw3Pin = 6, sw4Pin = 7;   // <-- nuovi
 
-bool attesaReady = false;
-const int deadZone = 5;
+// Stato
+int lastX=0,lastY=0,lastZ=0,lastA=0;
+bool magnet=false, mostraMessaggioTX=false, attesaReady=false;
+unsigned long messaggioTXMillis=0;
+const int deadZone=5;
 
-bool mostraMessaggioTX = false;
-unsigned long messaggioTXMillis = 0;
+// stato precedente pulsanti (per riconoscere il fronte)
+bool prevSw1=false, prevSw2=false, prevSw3=false, prevSw4=false;
 
-// Icona Bluetooth
-const uint8_t btIcon[] U8X8_PROGMEM = {
-  0b00011000,
-  0b00100100,
-  0b01000100,
-  0b00011000,
-  0b00011000,
-  0b01000100,
-  0b00100100,
-  0b00011000
+struct Payload {
+  int16_t x,y,z,a;   // -90..90
+  uint8_t c;         // calamita ON/OFF (toggle con SW1)
+  uint8_t save;      // impulso SAVE (SW2)
+  uint8_t exec;      // 1 = pacchetto valido
+  uint8_t b6;        // impulso BTN6 (D6)
+  uint8_t b7;        // impulso BTN7 (D7)
 };
 
-// Icona calamita
-const uint8_t magnetIcon[] U8X8_PROGMEM = {
-  0b00111100,
-  0b01100110,
-  0b01100110,
-  0b01111110,
-  0b01111110,
-  0b01100000,
-  0b01100000,
-  0b01100000
-};
+bool waitReady(uint16_t timeoutMs=600){
+  radio.startListening();
+  unsigned long t0=millis();
+  while(millis()-t0 < timeoutMs){
+    if(radio.available()){
+      char buf[8]={0};
+      radio.read(&buf,sizeof(buf));
+      if(String(buf).startsWith("ready")){
+        radio.stopListening();
+        return true;
+      }
+    }
+  }
+  radio.stopListening();
+  return false;
+}
 
-void setup() {
-  Serial.begin(9600);
-  btSerial.begin(9600);
+void radioInit(){
+  radio.begin();
+  radio.setChannel(76);
+  radio.setDataRate(RF24_250KBPS);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.setAutoAck(true);
+  radio.setRetries(5, 7);
+  radio.openWritingPipe(PIPE_TX);
+  radio.openReadingPipe(1, PIPE_RX);
+  radio.stopListening();
+  Serial.print(F("TX pipe: ")); Serial.write(PIPE_TX,5); Serial.println();
+  Serial.print(F("RX pipe: ")); Serial.write(PIPE_RX,5); Serial.println();
+}
+
+void setup(){
+  Serial.begin(115200);
   pinMode(sw1Pin, INPUT_PULLUP);
   pinMode(sw2Pin, INPUT_PULLUP);
+  pinMode(sw3Pin, INPUT_PULLUP);    // <-- nuovi
+  pinMode(sw4Pin, INPUT_PULLUP);    // <-- nuovi
 
-  Serial.println("🟢 NANO pronto: Joystick + BT attivi!");
+  radioInit();
 
   u8g2.begin();
   u8g2.setFont(u8g2_font_ncenB08_tr);
-
-  // Messaggio iniziale
-  u8g2.firstPage();
-  do {
-    u8g2.drawStr(10, 24, "Joystick Pronto!");
-    u8g2.drawStr(10, 45, "");
-  } while (u8g2.nextPage());
-
-  delay(2000); // Mostra 2 secondi
+  u8g2.firstPage(); do { u8g2.drawStr(8, 28, "Joystick + nRF24"); } while(u8g2.nextPage());
+  delay(300);
+  Serial.println(F("🟢 NANO pronto (TX)"));
 }
 
-void loop() {
-  // Ricevi dal Mega
-  if (btSerial.available()) {
-    String risposta = btSerial.readStringUntil('\n');
-    risposta.trim();
-    Serial.println("🔁 Risposta Mega: " + risposta);
-    if (risposta == "ready") {
-      attesaReady = false;
-    }
+void loop(){
+  // Joystick
+  int valY = map(analogRead(joy1X),0,1023,-90,90);
+  int valX = map(analogRead(joy1Y),0,1023,-90,90);
+  int valZ = map(analogRead(joy2X),0,1023,-90,90);
+  int valA = map(analogRead(joy2Y),0,1023,-90,90);
+
+  // Lettura pulsanti (attivi LOW)
+  bool sw1 = (digitalRead(sw1Pin)==LOW);
+  bool sw2 = (digitalRead(sw2Pin)==LOW);
+  bool sw3 = (digitalRead(sw3Pin)==LOW);
+  bool sw4 = (digitalRead(sw4Pin)==LOW);
+
+  // Rilevo solo il fronte di pressione
+  bool e1 = sw1 && !prevSw1;
+  bool e2 = sw2 && !prevSw2;
+  bool e3 = sw3 && !prevSw3;  // BTN6
+  bool e4 = sw4 && !prevSw4;  // BTN7
+
+  bool moved = (abs(valX-lastX)>deadZone) || (abs(valY-lastY)>deadZone) ||
+               (abs(valZ-lastZ)>deadZone) || (abs(valA-lastA)>deadZone);
+
+  bool changed = moved || e1 || e2 || e3 || e4;
+
+  if(changed){
+    if(e1) magnet = !magnet;  // toggle calamita solo su fronte
+
+    Payload p{
+      (int16_t)valX, (int16_t)valY, (int16_t)valZ, (int16_t)valA,
+      (uint8_t)(magnet?1:0),
+      (uint8_t)(e2?1:0),  // SAVE solo impulso
+      1,
+      (uint8_t)(e3?1:0),  // BTN6 impulso
+      (uint8_t)(e4?1:0)   // BTN7 impulso
+    };
+
+    bool ok = radio.write(&p, sizeof(p));
+    Serial.print(F("TX -> "));
+    Serial.print(p.x);Serial.print(',');Serial.print(p.y);Serial.print(',');
+    Serial.print(p.z);Serial.print(',');Serial.print(p.a);
+    Serial.print(F(" | C:"));Serial.print(p.c);
+    Serial.print(F(" SAVE:"));Serial.print(p.save);
+    Serial.print(F(" B6:"));Serial.print(p.b6);
+    Serial.print(F(" B7:"));Serial.println(p.b7);
+    Serial.println(ok?F("  [OK]"):F("  [FAIL]"));
+
+    mostraMessaggioTX=true; messaggioTXMillis=millis();
+    bool ack = waitReady(600);
+    Serial.println(ack?F("ACK: ready"):F("ACK: timeout"));
+
+    // aggiorno stati
+    lastX=valX; lastY=valY; lastZ=valZ; lastA=valA;
+    prevSw1=sw1; prevSw2=sw2; prevSw3=sw3; prevSw4=sw4;
+  } else {
+    // aggiorno gli stati se non ho inviato (debounce semplice)
+    prevSw1=sw1; prevSw2=sw2; prevSw3=sw3; prevSw4=sw4;
   }
 
-  if (attesaReady) return;
-
-  // Lettura joystick
-  int base    = analogRead(joy1X);
-  int spalla  = analogRead(joy1Y);
-  int gomito  = analogRead(joy2X);
-  int pinza   = analogRead(joy2Y);
-
-  int valY = map(base,    0, 1023, -90, 90);
-  int valX = map(spalla,  0, 1023, -90, 90);
-  int valZ = map(gomito,  0, 1023, -90, 90);
-  int valA = map(pinza,   0, 1023, -90, 90);
-
-  // Pulsanti
-  bool sw1Pressed = digitalRead(sw1Pin) == LOW;
-  bool sw2Pressed = digitalRead(sw2Pin) == LOW;
-
-  // Se cambia qualcosa o premi
-  if (abs(valX - lastX) > deadZone || abs(valY - lastY) > deadZone ||
-      abs(valZ - lastZ) > deadZone || abs(valA - lastA) > deadZone ||
-      sw1Pressed || sw2Pressed) {
-
-    btSerial.println("X:" + String(valX));
-    btSerial.println("Y:" + String(valY));
-    btSerial.println("Z:" + String(valZ));
-    btSerial.println("A:" + String(valA));
-
-    if (sw1Pressed) magnet = !magnet;
-    btSerial.println(magnet ? "C:1" : "C:0");
-
-    if (sw2Pressed) btSerial.println("SAVE:1");
-
-    btSerial.println("EXEC");
-    Serial.println("📤 Inviato");
-
-    mostraMessaggioTX = true;
-    messaggioTXMillis = millis();
-
-    attesaReady = true;
-
-    lastX = valX;
-    lastY = valY;
-    lastZ = valZ;
-    lastA = valA;
-  }
-
-  // --- OLED DISPLAY DRAW ---
-  u8g2.firstPage();
-  do {
+  // OLED
+  u8g2.firstPage(); do{
     u8g2.setFont(u8g2_font_6x10_tf);
-    u8g2.setCursor(0, 10); u8g2.print("X: "); u8g2.print(lastX);
-    u8g2.setCursor(0, 20); u8g2.print("Y: "); u8g2.print(lastY);
-    u8g2.setCursor(0, 30); u8g2.print("Z: "); u8g2.print(lastZ);
-    u8g2.setCursor(0, 40); u8g2.print("A: "); u8g2.print(lastA);
-
-    u8g2.setCursor(0, 52);
-    u8g2.print("MAG: ");
-    u8g2.print(magnet ? "ON" : "OFF");
-
-    if (magnet) {
-      u8g2.drawXBMP(60, 44, 8, 8, magnetIcon);
-    }
-
-    // Icona BT sempre
-    u8g2.drawXBMP(112, 0, 8, 8, btIcon);
-
-    // Messaggio TX per 1 secondo
-    if (mostraMessaggioTX && millis() - messaggioTXMillis < 1000) {
-      u8g2.setCursor(0, 63);
-      u8g2.print("TX: Comando inviato");
-    } else {
-      mostraMessaggioTX = false;
-    }
-
-  } while (u8g2.nextPage());
+    u8g2.setCursor(0,10); u8g2.print("X: "); u8g2.print(lastX);
+    u8g2.setCursor(0,20); u8g2.print("Y: "); u8g2.print(lastY);
+    u8g2.setCursor(0,30); u8g2.print("Z: "); u8g2.print(lastZ);
+    u8g2.setCursor(0,40); u8g2.print("A: "); u8g2.print(lastA);
+    u8g2.setCursor(0,52); u8g2.print("MAG: "); u8g2.print(magnet?"ON":"OFF");
+    if(mostraMessaggioTX && millis()-messaggioTXMillis<900){
+      u8g2.setCursor(0,63); u8g2.print("TX inviato");
+    } else mostraMessaggioTX=false;
+  } while(u8g2.nextPage());
 
   delay(10);
 }

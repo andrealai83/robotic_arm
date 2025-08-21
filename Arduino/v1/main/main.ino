@@ -3,7 +3,11 @@
 #include "Display.h"
 #include "Encoder.h"
 #include "Commands.h"
+#include "RobotLink.h" 
 
+// Istanza del link radio (CE=9, CSN=10)
+RobotLink radioLink(9, 10);
+ 
 void setup() {
   Serial.begin(115200);
 
@@ -14,10 +18,17 @@ void setup() {
 
   recalcPassiPerGrado();
   aggiornaDisplay();
+
+  radioLink.setHandlers(applyCommand, onBtn6, onBtn7);
+  radioLink.begin();
+  
   Serial.println(F("Sistema pronto."));
 }
 
 void loop() {
+ 
+  radioLink.poll();
+  
   // comandi da seriale
   handleSerial(); 
   // gestione pulsanti fisici
@@ -44,3 +55,4 @@ void loop() {
   // opzionale: LCD aggiornato a eventi, non sempre per evitare flicker
   // aggiornaDisplay();
 }
+ 

@@ -2,89 +2,76 @@
 #include "Motors.h"
 #include "Display.h"
 #include "Config.h"
+#include "RobotLink.h"
 
-// void handleSerial(){
-//   if (!Serial.available()) return;
-//   String comando = Serial.readStringUntil('\n');
-//   comando.trim();
+// Converte gradi in passi usando il passiPerGrado globale (double)
+static inline int degToStepsClamped(int deg) {
+  if (deg < -90) deg = -90;
+  if (deg >  90) deg =  90;
 
-//   Serial.println(">> COMANDO RICEVUTO: " + comando);
+  extern double passiPerGrado;           // definito in Config
+  double stepsd = deg * passiPerGrado;   // conversione °→passi
 
-//   if (comando.startsWith("M1:")) {
-//     int xTargetTemp = parseTarget(comando);
-//     mostraMessaggio("M1:" + String(xTargetTemp));
-//     setTarget(motore1, xTargetTemp); motore1Completato = false; target1 = xTargetTemp;
-//   }
-//   else if (comando.startsWith("M2:")) {
-//     int yTargetTemp = parseTarget(comando);
-//     mostraMessaggio("M2:" + String(yTargetTemp));
-//     setTarget(motore2, yTargetTemp); motore2Completato = false; target2 = yTargetTemp;
-//   }
-//   else if (comando.startsWith("M3:")) {
-//     int zTargetTemp = parseTarget(comando);
-//     mostraMessaggio("M3:" + String(zTargetTemp));
-//     setTarget(motore3, zTargetTemp); motore3Completato = false; target3 = zTargetTemp;
-//   }
-//   else if (comando.startsWith("M4:")) {
-//     int aTargetTemp = parseTarget(comando);
-//     mostraMessaggio("M4:" + String(aTargetTemp));
-//     setTarget(motore4, aTargetTemp); motore4Completato = false; target4 = aTargetTemp;
-//   }
-//   else if (comando == "RUN" || comando == "EXEC") {
-//     eseguiMovimento = true;
-//     mostraMessaggio(comando);
-//   }
-//   else if (comando.startsWith("SAVE:")) {
-//     saveRequest = true;
-//   }
-//   else if (comando.startsWith("ENDSTOP_ENABLED_1")) {
-//     ENDSTOP_ENABLED = 1;
-//   }
-//   else if (comando.startsWith("ENDSTOP_ENABLED_0")) {
-//     ENDSTOP_ENABLED = 0;
-//   }
-//   else if (comando == "HOME" || comando == "HOMING") {
-//     mostraMessaggio("HOMING...");
-//     homingMotor(motore1, ENDSTOP_1_PIN, -2000);
-//     homingMotor(motore2, ENDSTOP_2_PIN, -2000);
-//     homingMotor(motore3, ENDSTOP_3_PIN, -2000);
-//     homingMotor(motore4, ENDSTOP_4_PIN, -2000);
-//     target1 = target2 = target3 = target4 = 0;
-//     aggiornaDisplay();
-//   }
-//   else if (comando == "HOME_1") {
-//     mostraMessaggio("HOMING 1...");
-//     homingMotor(motore1, ENDSTOP_1_PIN, -2000);
-//     target1 = 0; aggiornaDisplay();
-//   }
-//   else if (comando == "HOME_2") {
-//     mostraMessaggio("HOMING 2...");
-//     homingMotor(motore2, ENDSTOP_2_PIN, -2000);
-//     target2 = 0; aggiornaDisplay();
-//   }
-//   else if (comando == "HOME_3") {
-//     mostraMessaggio("HOMING 3...");
-//     homingMotor(motore3, ENDSTOP_3_PIN, -2000);
-//     target3 = 0; aggiornaDisplay();
-//   }
-//   else if (comando == "HOME_4") {
-//     mostraMessaggio("HOMING 4...");
-//     homingMotor(motore4, ENDSTOP_4_PIN, -2000);
-//     target4 = 0; aggiornaDisplay();
-//   }
-//   else if (comando.startsWith("C:")) {
-//     int stato = parseTarget(comando);
-//     calamitaAttiva = (stato == 1);
-//     digitalWrite(TRANSISTOR_PIN, stato == 1 ? HIGH : LOW);
-//     Serial.println("ok");
-//     mostraMessaggio("C:" + String(stato));
-//   }
-//   else if (comando.indexOf("CFG:") >= 0) {
-//     String cleanCommand = comando.substring(comando.indexOf("CFG:") + 4);
-//     setConfiguration(cleanCommand);
-//     Serial.println("ok");
-//   }
-// }
+  // arrotondamento al passo intero
+  long steps = (stepsd >= 0.0) ? (long)(stepsd + 0.5) : (long)(stepsd - 0.5);
+
+  // su AVR l'int è 16 bit: limita a [-32768, 32767]
+  steps = constrain(steps, -32768L, 32767L);
+
+  return (int)steps;
+}
+
+
+  
+// --- Callback invocata dal radioLink.poll() ---
+// Traduce il Payload in una singola riga di comandi separati da ';'
+// riusando la tua pipeline parseCommandLine/ processToken.
+void applyCommand(const Payload& p)
+{
+  String cmd; cmd.reserve(96);
+
+  cmd += F("M1:"); cmd += degToStepsClamped(p.x); cmd += ';';  // X → M1
+  cmd += F("M2:"); cmd += degToStepsClamped(p.y); cmd += ';';  // Y → M2
+  cmd += F("M3:"); cmd += degToStepsClamped(p.z); cmd += ';';  // Z → M3
+  cmd += F("M4:"); cmd += degToStepsClamped(p.a); cmd += ';';  // A → M4
+
+  cmd += F("C:");  cmd += (p.c ? 1 : 0);           cmd += ';';
+  if (p.save)      cmd += F("SAVE:1;");
+  cmd += F("EXEC");
+
+  parseCommandLine(cmd);
+
+  Serial.print(F("[RF] ")); Serial.println(cmd);
+}
+
+
+// --- BTN6: HOMING completo (puoi cambiarlo in un preset) ---
+void onBtn6()
+{
+  // Riutilizziamo il tuo comando alto livello
+  parseCommandLine(F("HOMING"));
+  // oppure, se preferisci solo preset: parseCommandLine("M1:0;M2:0;M3:0;M4:0;EXEC");
+  Serial.println(F(">> BTN6 → HOMING"));
+}
+
+// --- BTN7: STOP software (replica il tuo handleButtons STOP) ---
+void onBtn7()
+{
+  extern bool eseguiMovimento;
+  extern bool motore1Completato, motore2Completato, motore3Completato, motore4Completato;
+  extern AccelStepper motore1, motore2, motore3, motore4;
+
+  motore1.stop(); motore1.setCurrentPosition(motore1.currentPosition()); motore1Completato = true;
+  motore2.stop(); motore2.setCurrentPosition(motore2.currentPosition()); motore2Completato = true;
+  motore3.stop(); motore3.setCurrentPosition(motore3.currentPosition()); motore3Completato = true;
+  motore4.stop(); motore4.setCurrentPosition(motore4.currentPosition()); motore4Completato = true;
+
+  eseguiMovimento = false;
+
+  mostraMessaggio("STOP");
+  Serial.println(F(">> BTN7 → STOP"));
+}
+
 
 void handleSerial()
 {
