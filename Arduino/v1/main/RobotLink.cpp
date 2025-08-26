@@ -13,8 +13,7 @@ RobotLink::RobotLink(uint8_t cePin, uint8_t csnPin)
 
 void RobotLink::setPipes(const uint8_t listenPipe[6], const uint8_t replyPipe[6]) {
   memcpy(_pipeListen, listenPipe, 6);
-  memcpy(_pipeReply,  replyPipe,  6);
-  // se la radio è già avviata, riapri le pipe
+  memcpy(_pipeReply,  replyPipe,  6); 
   if (_radio.isChipConnected()) {
     _openPipes();
   }
@@ -25,7 +24,10 @@ void RobotLink::_configRadio() {
   _radio.setDataRate(RF24_250KBPS);
   _radio.setPALevel(RF24_PA_LOW);
   _radio.setAutoAck(true);
-  _radio.setRetries(5, 7); // delay,count
+  _radio.enableAckPayload();       
+  _radio.enableDynamicPayloads();  
+  _radio.setCRCLength(RF24_CRC_16);
+  _radio.setRetries(5, 7);
 }
 
 void RobotLink::_openPipes() {
@@ -34,7 +36,7 @@ void RobotLink::_openPipes() {
 }
 
 void RobotLink::begin() {
-  // Assicurati che SPI resti Master sul MEGA
+  
   pinMode(SS, OUTPUT);
   digitalWrite(SS, HIGH);
 
@@ -54,26 +56,35 @@ void RobotLink::setHandlers(CommandHandler onCommand,
 
 void RobotLink::sendReady() {
   _radio.stopListening();
-  const char msg[] = "ready";
-  (void)_radio.write(&msg, sizeof(msg));
+  AckPayload ack{};                         
+  if (_statusProvider) _statusProvider(ack); 
+  (void)_radio.write(&ack, sizeof(ack)); 
   _radio.startListening();
 }
 
 void RobotLink::poll() {
-  if (_radio.available()) {
+  uint8_t pipe;
+  if (_radio.available(&pipe)) {     
     Payload p{};
     _radio.read(&p, sizeof(p));
 
-    // Callback principale con l'intero pacchetto
-    if (_onCommand) {
-      _onCommand(p);
-    }
-
-    // Pulsanti "impulso" aggiuntivi
+    if (_onCommand) _onCommand(p);
     if (p.b6 && _onBtn6) _onBtn6();
     if (p.b7 && _onBtn7) _onBtn7();
 
-    // ACK applicativo verso il Nano
-    sendReady();
+    Serial.print(F("RF: "));
+    Serial.print(p.m1); Serial.print(' ');
+    Serial.print(p.m2); Serial.print(' ');
+    Serial.print(p.m3); Serial.print(' ');
+    Serial.println(p.m4);
+
+    if (_statusProvider) {
+      AckPayload ack{};
+      _statusProvider(ack);
+      _radio.writeAckPayload(pipe, &ack, sizeof(ack));
+    }
   }
 }
+
+
+

@@ -39,6 +39,7 @@ void moveAllToDegrees(int g1,int g2,int g3,int g4){
 }
 
 void handleMotors() {
+  
   if (multiActive) {
     squad.run();
     if (motore1.distanceToGo()==0 &&
@@ -88,8 +89,14 @@ void setTarget(AccelStepper& motore, int targetGradi) {
   }
   long targetPassi = (long)(targetGradi * passiPerGrado);
   motore.moveTo(targetPassi);
-  Serial.print(F("Impostato target passi: "));
-  Serial.println(targetPassi);
+  
+  static unsigned long last=0;
+  if (millis()-last>120) { 
+    last=millis(); 
+    Serial.print(F("Impostato target passi: ")); 
+    Serial.println(targetPassi); 
+  }
+
 }
 
 void checkMotor(AccelStepper& motore, bool& completato, int endstopPin) {

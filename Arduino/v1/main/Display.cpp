@@ -45,6 +45,7 @@ void aggiornaDisplay(){
 }
 
 void mostraMessaggio(const String& messaggio){
+  return;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("CMD: ");

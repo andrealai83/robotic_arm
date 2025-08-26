@@ -18,6 +18,8 @@
                 "C:\\Users\\Andrea\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\cores\\arduino",
                 "C:\\Users\\Andrea\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\variants\\mega",
                 "C:\\Users\\Andrea\\Documents\\Arduino\\libraries\\AccelStepper\\src",
+                "C:\\Users\\Andrea\\Documents\\Arduino\\libraries\\RF24",
+                "C:\\Users\\Andrea\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\SPI\\src",
                 "C:\\Users\\Andrea\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\Wire\\src",
                 "C:\\Users\\Andrea\\Documents\\Arduino\\libraries\\LiquidCrystal_I2C",
                 "c:\\users\\andrea\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\lib\\gcc\\avr\\7.3.0\\include",
