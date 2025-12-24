@@ -73,6 +73,9 @@
             this.btnMotorOFF = new Krypton.Toolkit.KryptonButton();
             this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
             this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
+            this.btnSend = new Krypton.Toolkit.KryptonButton();
+            this.txtToSend = new System.Windows.Forms.TextBox();
+            this.btnClearLogs = new Krypton.Toolkit.KryptonButton();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -124,9 +127,9 @@
             this.listViewLog.GridLines = true;
             this.listViewLog.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listViewLog.HideSelection = false;
-            this.listViewLog.Location = new System.Drawing.Point(6, 6);
+            this.listViewLog.Location = new System.Drawing.Point(6, 45);
             this.listViewLog.Name = "listViewLog";
-            this.listViewLog.Size = new System.Drawing.Size(524, 867);
+            this.listViewLog.Size = new System.Drawing.Size(524, 828);
             this.listViewLog.TabIndex = 19;
             this.listViewLog.UseCompatibleStateImageBehavior = false;
             this.listViewLog.View = System.Windows.Forms.View.Details;
@@ -316,7 +319,7 @@
             // 
             this.kryptonButton1.Location = new System.Drawing.Point(1095, 55);
             this.kryptonButton1.Name = "kryptonButton1";
-            this.kryptonButton1.Size = new System.Drawing.Size(224, 31);
+            this.kryptonButton1.Size = new System.Drawing.Size(151, 31);
             this.kryptonButton1.TabIndex = 33;
             this.kryptonButton1.Values.DropDownArrowColor = System.Drawing.Color.Empty;
             this.kryptonButton1.Values.Text = "Go Home";
@@ -404,6 +407,9 @@
             // 
             // GrpLog.Panel
             // 
+            this.GrpLog.Panel.Controls.Add(this.btnClearLogs);
+            this.GrpLog.Panel.Controls.Add(this.txtToSend);
+            this.GrpLog.Panel.Controls.Add(this.btnSend);
             this.GrpLog.Panel.Controls.Add(this.listViewLog);
             this.GrpLog.Size = new System.Drawing.Size(539, 900);
             this.GrpLog.TabIndex = 45;
@@ -644,7 +650,7 @@
             // 
             this.btnImport.Location = new System.Drawing.Point(1095, 20);
             this.btnImport.Name = "btnImport";
-            this.btnImport.Size = new System.Drawing.Size(74, 25);
+            this.btnImport.Size = new System.Drawing.Size(151, 25);
             this.btnImport.TabIndex = 61;
             this.btnImport.Values.DropDownArrowColor = System.Drawing.Color.Empty;
             this.btnImport.Values.Text = "Clear All";
@@ -699,18 +705,46 @@
             this.trackBarP.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
             this.trackBarP.TrackBarSize = Krypton.Toolkit.PaletteTrackBarSize.Large;
             this.trackBarP.VolumeControl = true;
+            this.trackBarP.ValueChanged += new System.EventHandler(this.trackBarP_ValueChanged);
             // 
             // kryptonButton2
             // 
             this.kryptonButton2.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
             this.kryptonButton2.Location = new System.Drawing.Point(1095, 97);
             this.kryptonButton2.Name = "kryptonButton2";
-            this.kryptonButton2.Size = new System.Drawing.Size(68, 66);
+            this.kryptonButton2.Size = new System.Drawing.Size(151, 29);
             this.kryptonButton2.StateCommon.Back.Color1 = System.Drawing.Color.White;
             this.kryptonButton2.TabIndex = 64;
             this.kryptonButton2.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.kryptonButton2.Values.Text = "E/S";
+            this.kryptonButton2.Values.Text = "Stream ON/OFF";
             this.kryptonButton2.Click += new System.EventHandler(this.kryptonButton2_Click);
+            // 
+            // btnSend
+            // 
+            this.btnSend.Location = new System.Drawing.Point(376, 14);
+            this.btnSend.Name = "btnSend";
+            this.btnSend.Size = new System.Drawing.Size(74, 25);
+            this.btnSend.TabIndex = 65;
+            this.btnSend.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnSend.Values.Text = "Send";
+            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
+            // 
+            // txtToSend
+            // 
+            this.txtToSend.Location = new System.Drawing.Point(6, 16);
+            this.txtToSend.Name = "txtToSend";
+            this.txtToSend.Size = new System.Drawing.Size(364, 20);
+            this.txtToSend.TabIndex = 66;
+            // 
+            // btnClearLogs
+            // 
+            this.btnClearLogs.Location = new System.Drawing.Point(456, 14);
+            this.btnClearLogs.Name = "btnClearLogs";
+            this.btnClearLogs.Size = new System.Drawing.Size(74, 25);
+            this.btnClearLogs.TabIndex = 67;
+            this.btnClearLogs.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnClearLogs.Values.Text = "Clear";
+            this.btnClearLogs.Click += new System.EventHandler(this.btnClearLogs_Click);
             // 
             // FrmMain
             // 
@@ -765,6 +799,7 @@
             this.GrpSavePosition.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.GrpLog.Panel)).EndInit();
             this.GrpLog.Panel.ResumeLayout(false);
+            this.GrpLog.Panel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.GrpLog)).EndInit();
             this.GrpLog.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1.Panel)).EndInit();
@@ -826,6 +861,9 @@
         private Krypton.Toolkit.KryptonButton btnMotorOFF;
         private Krypton.Toolkit.KryptonTrackBar trackBarP;
         private Krypton.Toolkit.KryptonButton kryptonButton2;
+        private System.Windows.Forms.TextBox txtToSend;
+        private Krypton.Toolkit.KryptonButton btnSend;
+        private Krypton.Toolkit.KryptonButton btnClearLogs;
     }
 }
 

@@ -634,5 +634,21 @@ namespace Braccio_Robotico
             serialManager.Write(MotorStream);
             Stream = !Stream;
         }
+
+        private void btnSend_Click(object sender, EventArgs e)
+        {
+            serialManager.Write(txtToSend.Text);
+            txtToSend.Text = "";
+        }
+
+        private void btnClearLogs_Click(object sender, EventArgs e)
+        {
+            listViewLog.Clear();
+        }
+
+        private void trackBarP_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
