@@ -31,23 +31,25 @@ void setup() {
   recalcPassiPerGrado();
   aggiornaDisplay();
 
-  radioLink.setHandlers(applyCommand, onBtn6, onBtn7);
-  radioLink.begin();
+  //radioLink.setHandlers(applyCommand, onBtn6, onBtn7);
+  //radioLink.begin();
 
-  radioLink.setStatusProvider(fillAck);
+  //radioLink.setStatusProvider(fillAck);
   
   Serial.println(F("Sistema pronto."));
 }
 
 void loop() {
   
-  radioLink.poll();    
+  //radioLink.poll();    
         
   handleSerial();
 
   handleButtons();
 
-  joystickVelocityUpdate();   
+  //checkEndStop();
+
+  //joystickVelocityUpdate();   
 
   handleMotors();    
 

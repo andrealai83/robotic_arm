@@ -45,12 +45,12 @@ void aggiornaDisplay(){
 }
 
 void mostraMessaggio(const String& messaggio){
-  return;
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("CMD: ");
-  lcd.print(messaggio);
-  delay(300);
-  lcd.clear();
+  // lcd.clear();
+  // lcd.setCursor(0,0);
+  // lcd.print("CMD: ");
+  // lcd.print(messaggio);
+  // return;
+  // delay(1000);
+  // lcd.clear();
   aggiornaDisplay();
 }

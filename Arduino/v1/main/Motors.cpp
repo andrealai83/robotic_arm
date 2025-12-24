@@ -38,6 +38,42 @@ void moveAllToDegrees(int g1,int g2,int g3,int g4){
   multiActive = true;
 }
 
+// Esegue movimento coordinato usando i target già impostati
+void moveCoordinated() {
+  // Prima sincronizza tutti i target con le posizioni correnti
+  // per evitare che MultiStepper muova assi non desiderati
+  long currentPos1 = motore1.currentPosition();
+  long currentPos2 = motore2.currentPosition();
+  long currentPos3 = motore3.currentPosition();
+  long currentPos4 = motore4.currentPosition();
+  
+  long pos[4];
+  // IMPORTANTE: Converti gradi in passi!
+  pos[0] = (long)(target1 * passiPerGrado);
+  pos[1] = (long)(target2 * passiPerGrado);
+  pos[2] = (long)(target3 * passiPerGrado);
+  pos[3] = (long)(target4 * passiPerGrado);
+  
+  // Debug info
+  Serial.print(F("Movimento coordinato: M1:"));
+  Serial.print(currentPos1); Serial.print(F("->"));  Serial.print(pos[0]);
+  Serial.print(F(" M2:")); 
+  Serial.print(currentPos2); Serial.print(F("->"));  Serial.print(pos[1]);
+  Serial.print(F(" M3:"));
+  Serial.print(currentPos3); Serial.print(F("->"));  Serial.print(pos[2]);
+  Serial.print(F(" M4:"));
+  Serial.print(currentPos4); Serial.print(F("->"));  Serial.println(pos[3]);
+  
+  squad.moveTo(pos);
+  multiActive = true;
+  
+  // Resetta flag di completamento
+  motore1Completato = false;
+  motore2Completato = false;
+  motore3Completato = false;
+  motore4Completato = false;
+}
+
 void handleMotors() {
   
   if (multiActive) {
@@ -77,7 +113,11 @@ void setEnableAll(bool on) {
   if (on) {
     // i motori si stanno disabilitando → non fare nulla
   } else { 
-    motore1.setCurrentPosition((long)(jointDeg * passiPerGrado)); 
+    // Sincronizza posizioni motori con encoder
+    motore1.setCurrentPosition((long)(jointDeg1 * passiPerGrado)); 
+    motore2.setCurrentPosition((long)(jointDeg2 * passiPerGrado)); 
+    motore3.setCurrentPosition((long)(jointDeg3 * passiPerGrado)); 
+    motore4.setCurrentPosition((long)(jointDeg4 * passiPerGrado)); 
   }
 }
 
@@ -164,7 +204,12 @@ void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa) {
   motore.setMaxSpeed(prevMaxSpeed);
   motore.setAcceleration(prevAccel);
 
-  encoderZero();
+  // Imposta zero per tutti gli encoder attivi
+  encoderZero(1);  // Motor 1
+  encoderZero(2);  // Motor 2
+  encoderZero(3);  // Motor 3
+  encoderZero(4);  // Motor 4
+  encoderZero(5);  // Motor 5
 
   mostraMessaggio("Pronto");
 }

@@ -24,4 +24,5 @@ void checkMotor(AccelStepper& motore, bool& completato, int endstopPin);
 void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa);
 void handleMotors();
 void moveAllToDegrees(int g1,int g2,int g3,int g4);
+void moveCoordinated();  // Esegue movimento coordinato con i target attuali
 void setEnableAll(bool on);

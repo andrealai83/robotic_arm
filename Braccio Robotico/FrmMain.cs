@@ -25,6 +25,7 @@ namespace Braccio_Robotico
         private string MotorState = "ENA:1";
         private bool EndStopEnabled = true;
         private bool Running = false;
+        private bool Stream = false;
         private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
         public FrmMain()
         {
@@ -43,12 +44,41 @@ namespace Braccio_Robotico
                 return;
             }
 
-            if (message.StartsWith("EN_DEG_M1:"))
+            if (message.StartsWith("EN_DEG"))
             {
-                if (double.TryParse(message.Substring(10), NumberStyles.Float, CultureInfo.InvariantCulture, out var deg))
+                string[] sliptString = message.Substring(7).Trim().Split('M');
+
+                string M1 = sliptString[1].Substring(2).Trim();
+                string M2 = sliptString[2].Substring(2).Trim();
+                string M3 = sliptString[3].Substring(2).Trim();
+                string M4 = sliptString[4].Substring(2).Trim();
+
+
+                if (double.TryParse(M1, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg))
                 {
                     trackBarNumeric1.Value = (int)Math.Round(deg);
                     trackBar1.Value = (int)Math.Round(deg);
+                }
+
+
+                if (double.TryParse(M2, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg2))
+                {
+                    trackBarNumeric2.Value = (int)Math.Round(deg2);
+                    trackBar2.Value = (int)Math.Round(deg2);
+                }
+
+
+                if (double.TryParse(M3, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg3))
+                {
+                    trackBarNumeric3.Value = (int)Math.Round(deg3);
+                    trackBar3.Value = (int)Math.Round(deg3);
+                }
+
+
+                if (double.TryParse(M4, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg4))
+                {
+                    trackBarNumeric4.Value = (int)Math.Round(deg4);
+                    trackBar4.Value = (int)Math.Round(deg4);
                 }
             }
 
@@ -66,7 +96,7 @@ namespace Braccio_Robotico
             serialManager.OnDataReceived += LogMessage;
             serialManager.Open();
               
-            viewer3D.UpdateAngles(
+             viewer3D.UpdateAngles(
                  63,    // Y → base
                  -125,  // X → snodo 1
                  140,   // Z → snodo 2
@@ -133,7 +163,7 @@ namespace Braccio_Robotico
                     serialManager.Port.Write(comando);
                     history.Add(movi);  
 
-                    viewer3D.UpdateAngles(
+                     viewer3D.UpdateAngles(
                          movi.M2,    // Y → base
                          movi.M1,    // X → snodo 1
                          movi.M4,    // Z → snodo 2
@@ -215,6 +245,7 @@ namespace Braccio_Robotico
                      $"M2:{trackBar2.Value};" +
                      $"M3:{trackBar3.Value};" +
                      $"M4:{trackBar4.Value};" +
+                     $"MP:{trackBarP.Value};" +
                      $"{MagState};" +
                      "EXEC\n";
 
@@ -278,17 +309,18 @@ namespace Braccio_Robotico
                 C = MagState
             };
 
-            viewer3D.UpdateAngles(
-                 trackBar2.Value,  // Y → base
-                 trackBar1.Value,     // X → snodo 1
-                 trackBar4.Value,     // Z → snodo 2
-                 trackBar3.Value      // A → snodo 3 (calamita)
+             viewer3D.UpdateAngles(
+                 trackBar1.Value,  // Y → base
+                 trackBar2.Value,     // X → snodo 1
+                 trackBar3.Value,     // Z → snodo 2
+                 trackBar4.Value      // A → snodo 3 (calamita)
              ); 
         }
 
         private void trackBar2_ValueChanged(object sender, EventArgs e)
         {
-            trackBarNumeric1.Value = trackBar1.Value;
+            trackBarNumeric2.Value = trackBar2.Value;
+
             var mov = new Movimento
             {
                 M1 = trackBar1.Value,
@@ -298,11 +330,11 @@ namespace Braccio_Robotico
                 C = MagState
             };
             viewer3D.UpdateAngles(
-                 trackBar2.Value,  // Y → base
-                 trackBar1.Value,     // X → snodo 1
-                 trackBar4.Value,     // Z → snodo 2
-                 trackBar3.Value      // A → snodo 3 (calamita)
-             ); 
+                trackBar1.Value,  // Y → base
+                trackBar2.Value,     // X → snodo 1
+                trackBar3.Value,     // Z → snodo 2
+                trackBar4.Value      // A → snodo 3 (calamita)
+            );
         }
 
         private void trackBar3_ValueChanged(object sender, EventArgs e)
@@ -319,11 +351,11 @@ namespace Braccio_Robotico
             };
 
             viewer3D.UpdateAngles(
-                 trackBar2.Value,  // Y → base
-                 trackBar1.Value,     // X → snodo 1
-                 trackBar4.Value,     // Z → snodo 2
-                 trackBar3.Value      // A → snodo 3 (calamita)
-             ); 
+                trackBar1.Value,  // Y → base
+                trackBar2.Value,     // X → snodo 1
+                trackBar3.Value,     // Z → snodo 2
+                trackBar4.Value      // A → snodo 3 (calamita)
+            );
         }
 
         private void trackBar4_ValueChanged(object sender, EventArgs e)
@@ -340,10 +372,10 @@ namespace Braccio_Robotico
             };
 
             viewer3D.UpdateAngles(
-                 trackBar2.Value,  // Y → base
-                 trackBar1.Value,     // X → snodo 1
-                 trackBar4.Value,     // Z → snodo 2
-                 trackBar3.Value      // A → snodo 3 (calamita)
+                 trackBar1.Value,  // Y → base
+                 trackBar2.Value,     // X → snodo 1
+                 trackBar3.Value,     // Z → snodo 2
+                 trackBar4.Value      // A → snodo 3 (calamita)
              );
         }
 
@@ -467,7 +499,7 @@ namespace Braccio_Robotico
                 }
 
             // Forza l'aggiornamento della simulazione 3D
-            viewer3D.UpdateAngles(y, x, z, a);
+             viewer3D.UpdateAngles(y, x, z, a);
         }
         catch (Exception ex)
         {
@@ -593,6 +625,14 @@ namespace Braccio_Robotico
         private void btnMotorOFF_Click(object sender, EventArgs e)
         {
             ToggleMotor(false);
+        }
+
+       
+        private void kryptonButton2_Click(object sender, EventArgs e)
+        {
+            string MotorStream = Stream ? "STREAM:1" : "STREAM:0";
+            serialManager.Write(MotorStream);
+            Stream = !Stream;
         }
     }
 }

@@ -4,6 +4,7 @@
 
 void handleSerial();
 void handleButtons();
+void checkEndStop();
 int  parseTarget(const String& comando);
 void setConfiguration(const String& config);
 

@@ -71,6 +71,8 @@
             this.grpMotor = new Krypton.Toolkit.KryptonGroupBox();
             this.btnMotorON = new Krypton.Toolkit.KryptonButton();
             this.btnMotorOFF = new Krypton.Toolkit.KryptonButton();
+            this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
+            this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -312,7 +314,7 @@
             // 
             // kryptonButton1
             // 
-            this.kryptonButton1.Location = new System.Drawing.Point(860, 207);
+            this.kryptonButton1.Location = new System.Drawing.Point(1095, 55);
             this.kryptonButton1.Name = "kryptonButton1";
             this.kryptonButton1.Size = new System.Drawing.Size(224, 31);
             this.kryptonButton1.TabIndex = 33;
@@ -682,11 +684,41 @@
             this.btnMotorOFF.Values.Text = "OFF";
             this.btnMotorOFF.Click += new System.EventHandler(this.btnMotorOFF_Click);
             // 
+            // trackBarP
+            // 
+            this.trackBarP.Location = new System.Drawing.Point(865, 205);
+            this.trackBarP.Maximum = 360;
+            this.trackBarP.Name = "trackBarP";
+            this.trackBarP.Size = new System.Drawing.Size(381, 34);
+            this.trackBarP.StateNormal.Tick.Color1 = System.Drawing.Color.White;
+            this.trackBarP.StateNormal.Tick.Color2 = System.Drawing.Color.Empty;
+            this.trackBarP.StateNormal.Tick.Color3 = System.Drawing.Color.Empty;
+            this.trackBarP.StateNormal.Tick.Color4 = System.Drawing.Color.Empty;
+            this.trackBarP.StateNormal.Tick.Color5 = System.Drawing.Color.Empty;
+            this.trackBarP.TabIndex = 63;
+            this.trackBarP.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
+            this.trackBarP.TrackBarSize = Krypton.Toolkit.PaletteTrackBarSize.Large;
+            this.trackBarP.VolumeControl = true;
+            // 
+            // kryptonButton2
+            // 
+            this.kryptonButton2.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
+            this.kryptonButton2.Location = new System.Drawing.Point(1095, 97);
+            this.kryptonButton2.Name = "kryptonButton2";
+            this.kryptonButton2.Size = new System.Drawing.Size(68, 66);
+            this.kryptonButton2.StateCommon.Back.Color1 = System.Drawing.Color.White;
+            this.kryptonButton2.TabIndex = 64;
+            this.kryptonButton2.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.kryptonButton2.Values.Text = "E/S";
+            this.kryptonButton2.Click += new System.EventHandler(this.kryptonButton2_Click);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(2132, 924);
+            this.Controls.Add(this.kryptonButton2);
+            this.Controls.Add(this.trackBarP);
             this.Controls.Add(this.grpMotor);
             this.Controls.Add(this.btnImport);
             this.Controls.Add(this.btnSTOP);
@@ -792,6 +824,8 @@
         private Krypton.Toolkit.KryptonGroupBox grpMotor;
         private Krypton.Toolkit.KryptonButton btnMotorON;
         private Krypton.Toolkit.KryptonButton btnMotorOFF;
+        private Krypton.Toolkit.KryptonTrackBar trackBarP;
+        private Krypton.Toolkit.KryptonButton kryptonButton2;
     }
 }
 

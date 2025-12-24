@@ -57,3 +57,49 @@ F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Encodings.Web.xml
 F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Json.xml
 F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Threading.Tasks.Extensions.xml
 F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.exe.config
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.exe
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.pdb
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Krypton.Toolkit.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Data.Sqlite.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\SQLitePCLRaw.core.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\SQLitePCLRaw.provider.dynamic_cdecl.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Buffers.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Data.SQLite.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.IO.Pipelines.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Memory.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Numerics.Vectors.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Encodings.Web.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Json.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Threading.Tasks.Extensions.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.dll
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.pdb
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe.config
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Krypton.Toolkit.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Data.Sqlite.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Buffers.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Data.SQLite.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.IO.Pipelines.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Memory.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Numerics.Vectors.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Encodings.Web.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Json.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Threading.Tasks.Extensions.xml
+E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.xml
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.AssemblyReference.cache
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.SuggestedBindingRedirects.cache
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.exe.config
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmConfigurations.resources
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmMain.resources
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.FrmManagePosizioni.resources
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio_Robotico.Properties.Resources.resources
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.GenerateResource.cache
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.csproj.CoreCompileInputs.cache
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio .DDB19167.Up2Date
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.exe
+E:\Repos\robotic_arm\Braccio Robotico\obj\Debug\Braccio Robotico.pdb

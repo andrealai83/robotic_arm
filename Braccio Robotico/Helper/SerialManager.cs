@@ -67,7 +67,7 @@ namespace Braccio_Robotico.Helper
             try
             {
                 string data = Port.ReadLine().Trim();
-                OnDataReceived?.Invoke(data);
+                OnDataReceived?.Invoke(data); 
             }
             catch (Exception ex)
             {

@@ -7,22 +7,24 @@ extern int ENA1, DIR1, PUL1;
 extern int ENA2, DIR2, PUL2;
 extern int ENA3, DIR3, PUL3;
 extern int ENA4, DIR4, PUL4;
+extern int ENAP, DIRP, PULP;
 
 // Altri pin
-#define TRANSISTOR_PIN A0
-#define ENDSTOP_1_PIN A3
-#define ENDSTOP_2_PIN A2
-#define ENDSTOP_3_PIN A5
-#define ENDSTOP_4_PIN A4
-#define BT_STATE_PIN   A1
-#define BTN_HOMING_PIN A6
-#define BTN_STOP_PIN   A7
+#define TRANSISTOR_PIN A10
+#define ENDSTOP_1_PIN A2 //MOTORE 1
+#define ENDSTOP_2_PIN A3
+#define ENDSTOP_3_PIN A4
+#define ENDSTOP_4_PIN A5
+#define ENDSTOP_P_PIN A6
+#define BT_STATE_PIN   A7
+#define BTN_HOMING_PIN A0
+#define BTN_STOP_PIN   A1
 
 // Stato globale semplice (usato da più moduli)
 extern bool saveRequest;
 extern bool eseguiMovimento;
 extern bool calamitaAttiva;
-extern int  target1, target2, target3, target4;
+extern int  target1, target2, target3, target4, targetP;
 extern int  ENDSTOP_ENABLED;
 
 // Parametri motori

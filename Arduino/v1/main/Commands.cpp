@@ -3,6 +3,7 @@
 #include "Display.h"
 #include "Config.h"
 #include "RobotLink.h"
+#include "Encoder.h"
 #include <Arduino.h>
   
 // ========= PARAMETRI VELOCITÀ =========
@@ -148,7 +149,6 @@ void onBtn7()
   Serial.println(F(">> BTN7 → STOP"));
 }
 
-
 void handleSerial()
 {
   static String line;
@@ -173,7 +173,7 @@ void handleSerial()
 
 // --- Spezza per ';' e processa ogni token ---
 void parseCommandLine(String s)
-{
+{ 
   int start = 0;
   while (true)
   {
@@ -214,37 +214,48 @@ void processToken(const String &cmd)
     return;
   }
 
-  if (cmd.startsWith(F("M1:"))) {
+  if (cmd.startsWith(F("M1:"))) { 
     int v = atoi(cmd.c_str() + 3);
     showMoveMsg("M1:", v);
+    target1 = v;
     setTarget(motore1, v);
-    motore1Completato = false; target1 = v;
+    motore1Completato = false;
     return;
   }
   if (cmd.startsWith(F("M2:"))) {
     int v = atoi(cmd.c_str() + 3);
     showMoveMsg("M2:", v);
+    target2 = v;
     setTarget(motore2, v);
-    motore2Completato = false; target2 = v;
+    motore2Completato = false;
     return;
   }
   if (cmd.startsWith(F("M3:"))) {
     int v = atoi(cmd.c_str() + 3);
     showMoveMsg("M3:", v);
+    target3 = v;
     setTarget(motore3, v);
-    motore3Completato = false; target3 = v;
+    motore3Completato = false;
     return;
   }
   if (cmd.startsWith(F("M4:"))) {
     int v = atoi(cmd.c_str() + 3);
     showMoveMsg("M4:", v);
+    target4 = v;
     setTarget(motore4, v);
-    motore4Completato = false; target4 = v;
+    motore4Completato = false;
     return;
   }
 
   if (cmd == F("EXEC") || cmd == F("RUN")) {
-    eseguiMovimento = true;
+    // Prima di eseguire, sincronizza i target con le posizioni correnti
+    // Questo previene movimenti indesiderati di assi non comandati esplicitamente
+    // (es. se fai solo M1:90, M2/M3/M4 non devono muoversi)
+    
+    // Nota: se un asse non è stato comandato dall'ultimo EXEC, mantiene il target precedente
+    // Questo è intenzionale per permettere comandi sequenziali tipo: M1:90; EXEC; M2:45; EXEC
+    
+    moveCoordinated();
     mostraMessaggio("EXEC");
     return;
   }
@@ -265,6 +276,11 @@ void processToken(const String &cmd)
     homingMotor(motore2, ENDSTOP_2_PIN, -2000);
     homingMotor(motore3, ENDSTOP_3_PIN, -2000);
     homingMotor(motore4, ENDSTOP_4_PIN, -2000);
+    // Resetta gli encoder alla posizione di home
+    encoderReset(1);
+    encoderReset(2);
+    encoderReset(3);
+    encoderReset(4);
     target1 = target2 = target3 = target4 = 0;
     aggiornaDisplay();
     return;
@@ -273,6 +289,7 @@ void processToken(const String &cmd)
   if (cmd == F("HOME_1")) {
     mostraMessaggio("HOMING 1...");
     homingMotor(motore1, ENDSTOP_1_PIN, -2000);
+    encoderReset(1);  // resetta encoder dopo homing
     target1 = 0;
     Serial.println(F("HOMING COMPLETATO"));
     aggiornaDisplay();
@@ -281,6 +298,7 @@ void processToken(const String &cmd)
   if (cmd == F("HOME_2")) {
     mostraMessaggio("HOMING 2...");
     homingMotor(motore2, ENDSTOP_2_PIN, -2000);
+    encoderReset(2);  // resetta encoder dopo homing
     target2 = 0;
     Serial.println(F("HOMING COMPLETATO"));
     aggiornaDisplay();
@@ -289,6 +307,7 @@ void processToken(const String &cmd)
   if (cmd == F("HOME_3")) {
     mostraMessaggio("HOMING 3...");
     homingMotor(motore3, ENDSTOP_3_PIN, -2000);
+    encoderReset(3);  // resetta encoder dopo homing
     target3 = 0;
     Serial.println(F("HOMING COMPLETATO"));
     aggiornaDisplay();
@@ -297,6 +316,7 @@ void processToken(const String &cmd)
   if (cmd == F("HOME_4")) {
     mostraMessaggio("HOMING 4...");
     homingMotor(motore4, ENDSTOP_4_PIN, -2000);
+    encoderReset(4);  // resetta encoder dopo homing
     target4 = 0;
     Serial.println(F("HOMING COMPLETATO"));
     aggiornaDisplay();
@@ -307,6 +327,14 @@ void processToken(const String &cmd)
     String clean = cmd.substring(4);
     setConfiguration(clean);
     Serial.println(F("ok"));
+    return;
+  }
+  if (cmd == F("STREAM:1")) {
+    encoderStreamOn = true;
+    return;
+  }
+  if (cmd == F("STREAM:0")) {
+    encoderStreamOn = false;
     return;
   }
 
@@ -349,6 +377,81 @@ void handleButtons()
       lastButtonTime = millis();
     }
   }
+}
+
+void checkEndStop() {
+
+  String ENDSTOP_1_STATE = digitalRead(ENDSTOP_1_PIN) == LOW ? "LOW" : "HIGH";
+ String ENDSTOP_2_STATE = digitalRead(ENDSTOP_2_PIN) == LOW ? "LOW" : "HIGH";
+ String ENDSTOP_3_STATE = digitalRead(ENDSTOP_3_PIN) == LOW ? "LOW" : "HIGH";
+ String ENDSTOP_4_STATE = digitalRead(ENDSTOP_4_PIN) == LOW ? "LOW" : "HIGH";
+ 
+ if ( ENDSTOP_1_STATE == "LOW")
+  {  
+    motore1.stop();
+    motore1.setCurrentPosition(0); 
+    Serial.println(F("Finecorsa raggiunto!")); 
+    // backoff
+    int gradiBackoff = 5;
+    long passiBackoff = (long)(gradiBackoff * passiPerGrado);
+    Serial.println(F("Rilascio finecorsa..."));
+    motore1.moveTo(passiBackoff);
+    while (motore1.distanceToGo() != 0) motore1.run();
+    motore1.setCurrentPosition(0);
+    Serial.println(F("Backoff completato"));
+    return;
+  }
+
+   if ( ENDSTOP_2_STATE == "LOW")
+  {
+    motore2.stop();
+    motore2.setCurrentPosition(0); 
+    Serial.println(F("Finecorsa raggiunto!")); 
+    // backoff
+    int gradiBackoff = 5;
+    long passiBackoff = (long)(gradiBackoff * passiPerGrado);
+    Serial.println(F("Rilascio finecorsa..."));
+    motore2.moveTo(passiBackoff);
+    while (motore2.distanceToGo() != 0) motore2.run();
+    motore2.setCurrentPosition(0);
+    Serial.println(F("Backoff completato"));
+    return;
+  }
+
+  
+   if ( ENDSTOP_3_STATE == "LOW")
+  {
+    motore3.stop();
+    motore3.setCurrentPosition(0); 
+    Serial.println(F("Finecorsa raggiunto!")); 
+    // backoff
+    int gradiBackoff = 5;
+    long passiBackoff = (long)(gradiBackoff * passiPerGrado);
+    Serial.println(F("Rilascio finecorsa..."));
+    motore3.moveTo(passiBackoff);
+    while (motore3.distanceToGo() != 0) motore3.run();
+    motore3.setCurrentPosition(0);
+    Serial.println(F("Backoff completato"));
+    return;
+  }
+
+
+   if ( ENDSTOP_4_STATE == "LOW")
+  {
+    motore4.stop();
+    motore4.setCurrentPosition(0); 
+    Serial.println(F("Finecorsa raggiunto!")); 
+    // backoff
+    int gradiBackoff = 5;
+    long passiBackoff = (long)(gradiBackoff * passiPerGrado);
+    Serial.println(F("Rilascio finecorsa..."));
+    motore4.moveTo(passiBackoff);
+    while (motore4.distanceToGo() != 0) motore4.run();
+    motore4.setCurrentPosition(0);
+    Serial.println(F("Backoff completato"));
+    return;
+  }
+  
 }
 
 int parseTarget(const String &comando)
