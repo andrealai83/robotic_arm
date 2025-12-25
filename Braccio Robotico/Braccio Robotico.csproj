@@ -120,7 +120,10 @@
     <Compile Include="Helper\InputDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Helper\KinematicsHelper.cs" />
     <Compile Include="Helper\PosizioneStorage.cs" />
+    <Compile Include="Helper\TrajectoryInterpolator.cs" />
+    <Compile Include="Helper\TrajectoryOptimizer.cs" />
     <Compile Include="Models\Movimento.cs" />
     <Compile Include="Helper\MovimentoManager.cs" />
     <Compile Include="Helper\SerialManager.cs" />

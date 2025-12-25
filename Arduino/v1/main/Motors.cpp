@@ -22,6 +22,10 @@ void setupMotors(){
   setupMotor(motore3, ENA3);
   setupMotor(motore4, ENA4);
 
+  // Inverti la direzione del motore 3 per i movimenti normali
+  // (l'homing usa +2000 per andare verso l'interruttore)
+  motore3.setPinsInverted(true, false, false);
+
   // squad.addStepper(motore1); // RIMOSSO
   // squad.addStepper(motore2); // RIMOSSO
   // squad.addStepper(motore3); // RIMOSSO

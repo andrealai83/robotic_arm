@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,25 +47,32 @@ namespace Braccio_Robotico
 
             if (message.StartsWith("EN_DEG"))
             {
-                string[] sliptString = message.Substring(7).Trim().Split('M');
+                string[] sliptString = message.Substring(7).Trim().Split('M');   
 
                 string M1 = sliptString[1].Substring(2).Trim();
                 string M2 = sliptString[2].Substring(2).Trim();
                 string M3 = sliptString[3].Substring(2).Trim();
-                string M4 = sliptString[4].Substring(2).Trim();
+                string M4 = sliptString[4] != null ? sliptString[4].Substring(2).Trim() : "0";
 
 
                 if (double.TryParse(M1, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg))
                 {
                     trackBarNumeric1.Value = (int)Math.Round(deg);
-                    trackBar1.Value = (int)Math.Round(deg);
+                    if (deg <= 160)
+                        trackBar1.Value = (int)Math.Round(deg);
+                    else
+                        trackBar1.Value = 160;
                 }
 
 
                 if (double.TryParse(M2, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg2))
-                {
+                { 
+
                     trackBarNumeric2.Value = (int)Math.Round(deg2);
-                    trackBar2.Value = (int)Math.Round(deg2);
+                    if (deg <= 160)
+                        trackBar2.Value = (int)Math.Round(deg2);
+                    else
+                        trackBar2.Value = 160;
                 }
 
 
@@ -155,7 +163,15 @@ namespace Braccio_Robotico
         {
             var history = new List<Movimento>();
 
-            foreach (var movi in movimentoManager.GetMovimenti())
+            // Ottieni i movimenti salvati
+            var movements = movimentoManager.GetMovimenti();
+
+            // OPZIONE: Ottimizza la sequenza per minimizzare lo sforzo sui giunti
+            // Decommenta la riga seguente per abilitare l'ottimizzazione
+            //movements = TrajectoryOptimizer.OptimizeSequence(movements);
+            //LogMessage(TrajectoryOptimizer.GetSequenceStatistics(movements));
+
+            foreach (var movi in movements)
             {
                 try
                 {
@@ -419,7 +435,10 @@ namespace Braccio_Robotico
 
         private void trackBarNumeric2_ValueChanged(object sender, EventArgs e)
         {
-            trackBar2.Value = int.Parse(trackBarNumeric2.Value.ToString());
+            if (trackBarNumeric2.Value <= 160)
+                trackBar2.Value = int.Parse(trackBarNumeric2.Value.ToString());
+            else
+                trackBar2.Value = 160;
         }
 
         private void trackBarNumeric4_ValueChanged(object sender, EventArgs e)

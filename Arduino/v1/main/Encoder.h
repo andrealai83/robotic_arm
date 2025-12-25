@@ -4,8 +4,8 @@
 // Pin encoder per i cinque motori (A10 - A14)
 #define ENCODER_PIN_MOTOR1 A14  // MOTORE 1
 #define ENCODER_PIN_MOTOR2 A10  // MOTORE 2
-#define ENCODER_PIN_MOTOR3 A12  // MOTORE 3
-#define ENCODER_PIN_MOTOR4 A13  // MOTORE 4
+#define ENCODER_PIN_MOTOR3 A13  // MOTORE 3
+#define ENCODER_PIN_MOTOR4 A12  // MOTORE 4
 #define ENCODER_PIN_MOTOR5 A11  // MOTORE 5
 
 // Parametri di calibrazione
