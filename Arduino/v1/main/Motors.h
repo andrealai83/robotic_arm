@@ -1,7 +1,7 @@
 #pragma once
 #include <AccelStepper.h>
 #include "Config.h"
-#include <MultiStepper.h>
+
 
 // Istanze motori e flag di completamento
 extern AccelStepper motore1;
@@ -14,8 +14,6 @@ extern bool motore2Completato;
 extern bool motore3Completato;
 extern bool motore4Completato;
 
-extern MultiStepper squad;
-
 // API
 void setupMotors();
 void setupMotor(AccelStepper& motore, int pinENA);
@@ -24,5 +22,7 @@ void checkMotor(AccelStepper& motore, bool& completato, int endstopPin);
 void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa);
 void handleMotors();
 void moveAllToDegrees(int g1,int g2,int g3,int g4);
-void moveCoordinated();  // Esegue movimento coordinato con i target attuali
+
+// Nuova gestione coordinata scalata
+void startCoordinatedMove();   
 void setEnableAll(bool on);

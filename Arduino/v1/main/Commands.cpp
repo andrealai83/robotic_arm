@@ -255,7 +255,7 @@ void processToken(const String &cmd)
     // Nota: se un asse non è stato comandato dall'ultimo EXEC, mantiene il target precedente
     // Questo è intenzionale per permettere comandi sequenziali tipo: M1:90; EXEC; M2:45; EXEC
     
-    moveCoordinated();
+    startCoordinatedMove();
     mostraMessaggio("EXEC");
     return;
   }

@@ -53,6 +53,9 @@
             this.GrpComPorts = new Krypton.Toolkit.KryptonGroupBox();
             this.GrpSavePosition = new Krypton.Toolkit.KryptonGroupBox();
             this.GrpLog = new Krypton.Toolkit.KryptonGroupBox();
+            this.btnClearLogs = new Krypton.Toolkit.KryptonButton();
+            this.txtToSend = new System.Windows.Forms.TextBox();
+            this.btnSend = new Krypton.Toolkit.KryptonButton();
             this.btnGestionePosizioni = new Krypton.Toolkit.KryptonButton();
             this.trackBarNumeric3 = new Krypton.Toolkit.KryptonNumericUpDown();
             this.trackBarNumeric4 = new Krypton.Toolkit.KryptonNumericUpDown();
@@ -73,9 +76,6 @@
             this.btnMotorOFF = new Krypton.Toolkit.KryptonButton();
             this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
             this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
-            this.btnSend = new Krypton.Toolkit.KryptonButton();
-            this.txtToSend = new System.Windows.Forms.TextBox();
-            this.btnClearLogs = new Krypton.Toolkit.KryptonButton();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -250,7 +250,7 @@
             // trackBar1
             // 
             this.trackBar1.Location = new System.Drawing.Point(12, 205);
-            this.trackBar1.Maximum = 360;
+            this.trackBar1.Maximum = 160;
             this.trackBar1.Name = "trackBar1";
             this.trackBar1.Size = new System.Drawing.Size(686, 34);
             this.trackBar1.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -284,7 +284,7 @@
             // trackBar2
             // 
             this.trackBar2.Location = new System.Drawing.Point(11, 167);
-            this.trackBar2.Maximum = 360;
+            this.trackBar2.Maximum = 160;
             this.trackBar2.Name = "trackBar2";
             this.trackBar2.Size = new System.Drawing.Size(686, 34);
             this.trackBar2.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -414,6 +414,33 @@
             this.GrpLog.Size = new System.Drawing.Size(539, 900);
             this.GrpLog.TabIndex = 45;
             this.GrpLog.Values.Heading = "Logs";
+            // 
+            // btnClearLogs
+            // 
+            this.btnClearLogs.Location = new System.Drawing.Point(456, 14);
+            this.btnClearLogs.Name = "btnClearLogs";
+            this.btnClearLogs.Size = new System.Drawing.Size(74, 25);
+            this.btnClearLogs.TabIndex = 67;
+            this.btnClearLogs.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnClearLogs.Values.Text = "Clear";
+            this.btnClearLogs.Click += new System.EventHandler(this.btnClearLogs_Click);
+            // 
+            // txtToSend
+            // 
+            this.txtToSend.Location = new System.Drawing.Point(6, 16);
+            this.txtToSend.Name = "txtToSend";
+            this.txtToSend.Size = new System.Drawing.Size(364, 20);
+            this.txtToSend.TabIndex = 66;
+            // 
+            // btnSend
+            // 
+            this.btnSend.Location = new System.Drawing.Point(376, 14);
+            this.btnSend.Name = "btnSend";
+            this.btnSend.Size = new System.Drawing.Size(74, 25);
+            this.btnSend.TabIndex = 65;
+            this.btnSend.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnSend.Values.Text = "Send";
+            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
             // 
             // btnGestionePosizioni
             // 
@@ -718,33 +745,6 @@
             this.kryptonButton2.Values.DropDownArrowColor = System.Drawing.Color.Empty;
             this.kryptonButton2.Values.Text = "Stream ON/OFF";
             this.kryptonButton2.Click += new System.EventHandler(this.kryptonButton2_Click);
-            // 
-            // btnSend
-            // 
-            this.btnSend.Location = new System.Drawing.Point(376, 14);
-            this.btnSend.Name = "btnSend";
-            this.btnSend.Size = new System.Drawing.Size(74, 25);
-            this.btnSend.TabIndex = 65;
-            this.btnSend.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.btnSend.Values.Text = "Send";
-            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
-            // 
-            // txtToSend
-            // 
-            this.txtToSend.Location = new System.Drawing.Point(6, 16);
-            this.txtToSend.Name = "txtToSend";
-            this.txtToSend.Size = new System.Drawing.Size(364, 20);
-            this.txtToSend.TabIndex = 66;
-            // 
-            // btnClearLogs
-            // 
-            this.btnClearLogs.Location = new System.Drawing.Point(456, 14);
-            this.btnClearLogs.Name = "btnClearLogs";
-            this.btnClearLogs.Size = new System.Drawing.Size(74, 25);
-            this.btnClearLogs.TabIndex = 67;
-            this.btnClearLogs.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.btnClearLogs.Values.Text = "Clear";
-            this.btnClearLogs.Click += new System.EventHandler(this.btnClearLogs_Click);
             // 
             // FrmMain
             // 

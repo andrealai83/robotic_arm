@@ -21,8 +21,8 @@ double rapportoPlanetario = 14.2;
 
 float moltiplicaRapportoPlanetario = 28.0f;
 double passiPerGrado = 0.0;
-int maxSpeed = 10000;
-int maxAccel = 5000;  // Ridotto da 10000 per movimenti più fluidi
+int maxSpeed = 2000;
+int maxAccel = 100000;  // Rampa rimossa (accelerazione brutale)
 
 bool motorsEnabled = true;          
 const bool EN_ACTIVE_HIGH = true;  

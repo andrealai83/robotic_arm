@@ -13,8 +13,8 @@ bool motore2Completato = true;
 bool motore3Completato = true;
 bool motore4Completato = true;
  
-MultiStepper squad;
-bool multiActive = false;
+// Flag globale per indicare se siamo in movimento coordinato
+bool movingCoordinated = false;
 
 void setupMotors(){
   setupMotor(motore1, ENA1);
@@ -22,70 +22,116 @@ void setupMotors(){
   setupMotor(motore3, ENA3);
   setupMotor(motore4, ENA4);
 
-  squad.addStepper(motore1);
-  squad.addStepper(motore2);
-  squad.addStepper(motore3);
-  squad.addStepper(motore4);
+  // squad.addStepper(motore1); // RIMOSSO
+  // squad.addStepper(motore2); // RIMOSSO
+  // squad.addStepper(motore3); // RIMOSSO
+  // squad.addStepper(motore4); // RIMOSSO
 }
 
 void moveAllToDegrees(int g1,int g2,int g3,int g4){
-  long pos[4];
-  pos[0] = (long)(g1 * passiPerGrado);
-  pos[1] = (long)(g2 * passiPerGrado);
-  pos[2] = (long)(g3 * passiPerGrado);
-  pos[3] = (long)(g4 * passiPerGrado);
-  squad.moveTo(pos);
-  multiActive = true;
+  // Funzione legacy o di test rapido
+  // Impostiamo i target globali e chiamiamo la nuova funzione
+  target1 = g1;
+  target2 = g2;
+  target3 = g3;
+  target4 = g4;
+  startCoordinatedMove();
 }
 
-// Esegue movimento coordinato usando i target già impostati
-void moveCoordinated() {
-  // Prima sincronizza tutti i target con le posizioni correnti
-  // per evitare che MultiStepper muova assi non desiderati
-  long currentPos1 = motore1.currentPosition();
-  long currentPos2 = motore2.currentPosition();
-  long currentPos3 = motore3.currentPosition();
-  long currentPos4 = motore4.currentPosition();
+// Esegue movimento coordinato scalando le velocità
+void startCoordinatedMove() {
+  // 1. Calcola posizione attuale e target in passi
+  long current1 = motore1.currentPosition();
+  long current2 = motore2.currentPosition();
+  long current3 = motore3.currentPosition();
+  long current4 = motore4.currentPosition();
+
+  long targetPos1 = (long)(target1 * passiPerGrado);
+  long targetPos2 = (long)(target2 * passiPerGrado);
+  long targetPos3 = (long)(target3 * passiPerGrado);
+  long targetPos4 = (long)(target4 * passiPerGrado);
+
+  // 2. Calcola distanza assoluta per ogni motore
+  long dist1 = abs(targetPos1 - current1);
+  long dist2 = abs(targetPos2 - current2);
+  long dist3 = abs(targetPos3 - current3);
+  long dist4 = abs(targetPos4 - current4);
+
+  // 3. Trova la distanza massima
+  long maxDist = dist1;
+  if (dist2 > maxDist) maxDist = dist2;
+  if (dist3 > maxDist) maxDist = dist3;
+  if (dist4 > maxDist) maxDist = dist4;
+
+  if (maxDist == 0) {
+    // Nessun movimento necessario
+    movingCoordinated = false;
+    Serial.println("ready");
+    return;
+  }
+
+  // 4. Calcola e imposta velocità/accelerazione scalate per ogni motore
+  // Il motore che deve fare più strada andrà a velocità piena (maxSpeed).
+  // Gli altri andranno in proporzione: ratio = dist / maxDist
   
-  long pos[4];
-  // IMPORTANTE: Converti gradi in passi!
-  pos[0] = (long)(target1 * passiPerGrado);
-  pos[1] = (long)(target2 * passiPerGrado);
-  pos[2] = (long)(target3 * passiPerGrado);
-  pos[3] = (long)(target4 * passiPerGrado);
+  auto setupAxis = [&](AccelStepper& m, long dist) {
+      if (dist == 0) {
+          m.setMaxSpeed(100.0f); // Velocità minima arbitraria per non dividere per 0 internalmente
+          m.setAcceleration(100.0f);
+      } else {
+          float ratio = (float)dist / (float)maxDist;
+          m.setMaxSpeed(maxSpeed * ratio);
+          m.setAcceleration(maxAccel * ratio);
+      }
+  };
+
+  setupAxis(motore1, dist1);
+  setupAxis(motore2, dist2);
+  setupAxis(motore3, dist3);
+  setupAxis(motore4, dist4);
+
+  // 5. Imposta i target
+  motore1.moveTo(targetPos1);
+  motore2.moveTo(targetPos2);
+  motore3.moveTo(targetPos3);
+  motore4.moveTo(targetPos4);
+
+  movingCoordinated = true;
   
-  // Debug info
-  Serial.print(F("Movimento coordinato: M1:"));
-  Serial.print(currentPos1); Serial.print(F("->"));  Serial.print(pos[0]);
-  Serial.print(F(" M2:")); 
-  Serial.print(currentPos2); Serial.print(F("->"));  Serial.print(pos[1]);
-  Serial.print(F(" M3:"));
-  Serial.print(currentPos3); Serial.print(F("->"));  Serial.print(pos[2]);
-  Serial.print(F(" M4:"));
-  Serial.print(currentPos4); Serial.print(F("->"));  Serial.println(pos[3]);
-  
-  squad.moveTo(pos);
-  multiActive = true;
-  
-  // Resetta flag di completamento
+  // Reset flag completamento
   motore1Completato = false;
   motore2Completato = false;
   motore3Completato = false;
   motore4Completato = false;
+
+  Serial.println(F("Start coordinated move..."));
 }
 
 void handleMotors() {
   
-  if (multiActive) {
-    squad.run();
-    if (motore1.distanceToGo()==0 &&
-        motore2.distanceToGo()==0 &&
-        motore3.distanceToGo()==0 &&
-        motore4.distanceToGo()==0) {
-      multiActive = false;
+  if (movingCoordinated) {
+    // Esegui run() per tutti i motori
+    bool running = false;
+
+    // run() ritorna true se il motore è ancora in movimento
+    if (motore1.distanceToGo() != 0) { motore1.run(); running = true; }
+    if (motore2.distanceToGo() != 0) { motore2.run(); running = true; }
+    if (motore3.distanceToGo() != 0) { motore3.run(); running = true; }
+    if (motore4.distanceToGo() != 0) { motore4.run(); running = true; }
+
+    if (!running) {
+      movingCoordinated = false;
+      
+      // Ripristina velocità originali (opzionale, ma buona pratica)
+      motore1.setMaxSpeed(maxSpeed); motore1.setAcceleration(maxAccel);
+      motore2.setMaxSpeed(maxSpeed); motore2.setAcceleration(maxAccel);
+      motore3.setMaxSpeed(maxSpeed); motore3.setAcceleration(maxAccel);
+      motore4.setMaxSpeed(maxSpeed); motore4.setAcceleration(maxAccel);
+
       Serial.println("ready");
     }
   } else {
+    // Modalità manuale indipendente
     checkMotor(motore1, motore1Completato, ENDSTOP_1_PIN);
     checkMotor(motore2, motore2Completato, ENDSTOP_2_PIN);
     checkMotor(motore3, motore3Completato, ENDSTOP_3_PIN);
