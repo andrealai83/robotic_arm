@@ -14,12 +14,20 @@ extern bool motore2Completato;
 extern bool motore3Completato;
 extern bool motore4Completato;
 
+// Configurazione direzioni
+struct MotorConfig {
+    bool invertRotation;      // true = inverti il senso di marcia (AGISCE SUI PIN)
+    int  homingDirectionSign; // 1 = Direzione POSITIVA, -1 = Direzione NEGATIVA (Indipendente da invertRotation)
+};
+
+extern MotorConfig motorConfigs[4];
+
 // API
 void setupMotors();
-void setupMotor(AccelStepper& motore, int pinENA);
+void setupMotor(AccelStepper& motore, int pinENA, int motorIndex); // Aggiunto indice
 void setTarget(AccelStepper& motore, int targetGradi);
 void checkMotor(AccelStepper& motore, bool& completato, int endstopPin);
-void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa);
+void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex); // Aggiunto indice per recuperare config
 void handleMotors();
 void moveAllToDegrees(int g1,int g2,int g3,int g4);
 

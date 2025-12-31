@@ -272,10 +272,11 @@ void processToken(const String &cmd)
 
   if (cmd == F("HOMING") || cmd == F("HOME")) {
     mostraMessaggio("HOMING...");
-    homingMotor(motore1, ENDSTOP_1_PIN, -2000);
-    homingMotor(motore2, ENDSTOP_2_PIN, -2000);
-    homingMotor(motore3, ENDSTOP_3_PIN, -2000);
-    homingMotor(motore4, ENDSTOP_4_PIN, -2000);
+    homingMotor(motore1, ENDSTOP_1_PIN, 0);
+    // Nota: Il motore 2 userà la config centralizzata per decidere la direzione
+    homingMotor(motore2, ENDSTOP_2_PIN, 1);
+    homingMotor(motore3, ENDSTOP_3_PIN, 2);
+    homingMotor(motore4, ENDSTOP_4_PIN, 3);
     // Resetta gli encoder alla posizione di home
     encoderReset(1);
     encoderReset(2);
@@ -288,7 +289,7 @@ void processToken(const String &cmd)
 
   if (cmd == F("HOME_1")) {
     mostraMessaggio("HOMING 1...");
-    homingMotor(motore1, ENDSTOP_1_PIN, -2000);
+    homingMotor(motore1, ENDSTOP_1_PIN, 0);
     encoderReset(1);  // resetta encoder dopo homing
     target1 = 0;
     Serial.println(F("HOMING COMPLETATO"));
@@ -297,7 +298,7 @@ void processToken(const String &cmd)
   }
   if (cmd == F("HOME_2")) {
     mostraMessaggio("HOMING 2...");
-    homingMotor(motore2, ENDSTOP_2_PIN, -2000);
+    homingMotor(motore2, ENDSTOP_2_PIN, 1);
     encoderReset(2);  // resetta encoder dopo homing
     target2 = 0;
     Serial.println(F("HOMING COMPLETATO"));
@@ -306,7 +307,7 @@ void processToken(const String &cmd)
   }
   if (cmd == F("HOME_3")) {
     mostraMessaggio("HOMING 3...");
-    homingMotor(motore3, ENDSTOP_3_PIN, -2000);
+    homingMotor(motore3, ENDSTOP_3_PIN, 2);
     encoderReset(3);  // resetta encoder dopo homing
     target3 = 0;
     Serial.println(F("HOMING COMPLETATO"));
@@ -315,7 +316,7 @@ void processToken(const String &cmd)
   }
   if (cmd == F("HOME_4")) {
     mostraMessaggio("HOMING 4...");
-    homingMotor(motore4, ENDSTOP_4_PIN, -2000);
+    homingMotor(motore4, ENDSTOP_4_PIN, 3);
     encoderReset(4);  // resetta encoder dopo homing
     target4 = 0;
     Serial.println(F("HOMING COMPLETATO"));
@@ -354,7 +355,7 @@ void handleButtons()
       mostraMessaggio("BTN: HOMING");
       String cmd = "HOMING";
       handleSerial(); // process pending serial first
-      homingMotor(motore1, ENDSTOP_1_PIN, -2000);
+      homingMotor(motore1, ENDSTOP_1_PIN, 0);
       lastButtonTime = millis();
     }
     if (digitalRead(BTN_STOP_PIN) == LOW)

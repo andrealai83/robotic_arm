@@ -49,6 +49,9 @@ namespace Braccio_Robotico
             {
                 string[] sliptString = message.Substring(7).Trim().Split('M');   
 
+                if(sliptString.Length < 4)
+                    return;
+
                 string M1 = sliptString[1].Substring(2).Trim();
                 string M2 = sliptString[2].Substring(2).Trim();
                 string M3 = sliptString[3].Substring(2).Trim();

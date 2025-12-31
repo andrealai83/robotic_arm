@@ -16,20 +16,22 @@ bool motore4Completato = true;
 // Flag globale per indicare se siamo in movimento coordinato
 bool movingCoordinated = false;
 
+// Configurazione centralizzata dei motori
+// Indice 0 = motore1, 1 = motore2, ecc.
+// invertRotation: true = Inverte i pin DIR (Cambia il senso di rotazione per TUTTI i movimenti)
+// homingDirectionSign: 1 = Homing verso Positivo, -1 = Homing verso Negativo. (SCEGLIERE SEPARATAMENTE)
+MotorConfig motorConfigs[4] = {
+    { false, -1 }, // Motore 1: Rotazione Normale, Homing verso Negativo
+    { true,  -1 }, // Motore 2: Rotazione Invertita, Homing verso Positivo
+    { true, -1 }, // Motore 3: Rotazione Normale, Homing verso Negativo
+    { false, -1 }  // Motore 4: Rotazione Normale, Homing verso Negativo
+};
+
 void setupMotors(){
-  setupMotor(motore1, ENA1);
-  setupMotor(motore2, ENA2);
-  setupMotor(motore3, ENA3);
-  setupMotor(motore4, ENA4);
-
-  // Inverti la direzione del motore 3 per i movimenti normali
-  // (l'homing usa +2000 per andare verso l'interruttore)
-  motore3.setPinsInverted(true, false, false);
-
-  // squad.addStepper(motore1); // RIMOSSO
-  // squad.addStepper(motore2); // RIMOSSO
-  // squad.addStepper(motore3); // RIMOSSO
-  // squad.addStepper(motore4); // RIMOSSO
+  setupMotor(motore1, ENA1, 0);
+  setupMotor(motore2, ENA2, 1);
+  setupMotor(motore3, ENA3, 2);
+  setupMotor(motore4, ENA4, 3);
 }
 
 void moveAllToDegrees(int g1,int g2,int g3,int g4){
@@ -143,9 +145,15 @@ void handleMotors() {
   }
 }
 
-void setupMotor(AccelStepper& motore, int pinENA) {
+void setupMotor(AccelStepper& motore, int pinENA, int motorIndex) {
   pinMode(pinENA, OUTPUT);
   setEnableAll(true);
+  
+  // Applica inversione se configurata
+  if (motorConfigs[motorIndex].invertRotation) {
+      motore.setPinsInverted(true, false, false);
+  }
+
   motore.setMaxSpeed(maxSpeed);
   motore.setAcceleration(maxAccel);
   motore.setMinPulseWidth(5); 
@@ -216,7 +224,7 @@ void checkMotor(AccelStepper& motore, bool& completato, int endstopPin) {
   }
 }
 
-void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa) {
+void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
   if (ENDSTOP_ENABLED == 0) {
     Serial.println(F("Endstop disabilitato: homing saltato."));
     mostraMessaggio("Homing disabilitato");
@@ -224,14 +232,22 @@ void homingMotor(AccelStepper& motore, int endstopPin, int velocitaNegativa) {
     return;
   }
 
+  // Definisci la velocità base per l'homing
+  int baseHomingSpeed = 2000;
+  
+  // Calcola velocità effettiva basata sulla direzione configurata
+  // Se homingDir è -1 (standard), speed sarà -2000
+  // Se homingDir è 1 (invertito), speed sarà 2000
+  int velocitaHoming = baseHomingSpeed * motorConfigs[motorIndex].homingDirectionSign;
+
   mostraMessaggio("Homing in corso...");
   long prevMaxSpeed = (long)motore.maxSpeed();
   long prevAccel = (long)motore.acceleration();
 
   motore.enableOutputs();
-  motore.setMaxSpeed(abs(velocitaNegativa));
+  motore.setMaxSpeed(abs(velocitaHoming));
   motore.setAcceleration(500);
-  motore.setSpeed(velocitaNegativa);
+  motore.setSpeed(velocitaHoming);
 
   unsigned long startTime = millis();
   while (digitalRead(endstopPin) == HIGH && millis() - startTime < 10000) {
