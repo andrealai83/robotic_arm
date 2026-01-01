@@ -118,7 +118,7 @@ namespace Braccio_Robotico
             { 
                 btnConnect.Enabled = false;
                 btnDisconnect.Enabled = true; 
-                //RobotConfig.SendConfiguration(serialManager.Port);
+                RobotConfig.SendConfiguration(serialManager.Port);
             }
         }
 
@@ -164,6 +164,11 @@ namespace Braccio_Robotico
 
         private async void btnPlayPosition_Click(object sender, EventArgs e)
         {
+           playAsync();
+        }
+
+        private async Task playAsync()
+        {
             var history = new List<Movimento>();
 
             // Ottieni i movimenti salvati
@@ -178,16 +183,16 @@ namespace Braccio_Robotico
             {
                 try
                 {
-                    string comando = $"M1:{movi.M1}\nM3:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.C}\nRUN\n";
+                    string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.C}\nRUN\n";
                     serialManager.Port.Write(comando);
-                    history.Add(movi);  
+                    history.Add(movi);
 
-                     viewer3D.UpdateAngles(
-                         movi.M2,    // Y → base
-                         movi.M1,    // X → snodo 1
-                         movi.M4,    // Z → snodo 2
-                         movi.M3     // A → snodo 3 (calamita)
-                     );
+                    viewer3D.UpdateAngles(
+                        movi.M2,    // Y → base
+                        movi.M1,    // X → snodo 1
+                        movi.M4,    // Z → snodo 2
+                        movi.M3     // A → snodo 3 (calamita)
+                    );
 
                     LogMessage($"Command sent:\n{comando}");
 
@@ -206,7 +211,7 @@ namespace Braccio_Robotico
                     break;
                 }
             }
-             
+
             Console.WriteLine("All movements sent.");
         }
          
@@ -671,6 +676,18 @@ namespace Braccio_Robotico
         private void trackBarP_ValueChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private async void ckPlayLoop_CheckedChanged(object sender, EventArgs e)
+        {
+            if (ckPlayLoop.Checked)
+            {
+                while (ckPlayLoop.Checked)
+                {
+                    await playAsync();
+                    await Task.Delay(200);
+                }
+            }
         }
     }
 }

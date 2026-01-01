@@ -7,12 +7,12 @@
       "RelativeMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|solutionrelative:braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|E:\\Repos\\robotic_arm\\braccio robotico\\helper\\trajectoryinterpolator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|solutionrelative:braccio robotico\\helper\\trajectoryinterpolator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|E:\\Repos\\robotic_arm\\braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|solutionrelative:braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|E:\\Repos\\robotic_arm\\braccio robotico\\helper\\trajectoryinterpolator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|solutionrelative:braccio robotico\\helper\\trajectoryinterpolator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,7 +30,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "TrajectoryInterpolator.cs",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\TrajectoryInterpolator.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\Helper\\TrajectoryInterpolator.cs",
@@ -48,21 +48,22 @@
               "RelativeDocumentMoniker": "Braccio Robotico\\FrmMain.cs",
               "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs",
               "RelativeToolTip": "Braccio Robotico\\FrmMain.cs",
-              "ViewState": "AgIAACsAAAAAAAAAAAAcwDMAAAAqAAAAAAAAAA==",
+              "ViewState": "AgIAAJUCAAAAAAAAAAAMwK8CAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-25T09:28:57.826Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "FrmMain.cs [Progettazione]",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\FrmMain.cs",
               "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs [Progettazione]",
               "RelativeToolTip": "Braccio Robotico\\FrmMain.cs [Progettazione]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-25T09:28:55.959Z"
+              "WhenOpened": "2025-12-25T09:28:55.959Z",
+              "EditorCaption": " [Progettazione]"
             }
           ]
         }

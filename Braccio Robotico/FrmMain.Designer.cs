@@ -76,6 +76,7 @@
             this.btnMotorOFF = new Krypton.Toolkit.KryptonButton();
             this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
             this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
+            this.ckPlayLoop = new System.Windows.Forms.CheckBox();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -110,9 +111,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.listBoxPositions.FormattingEnabled = true;
-            this.listBoxPositions.Location = new System.Drawing.Point(6, 45);
+            this.listBoxPositions.Location = new System.Drawing.Point(6, 84);
             this.listBoxPositions.Name = "listBoxPositions";
-            this.listBoxPositions.Size = new System.Drawing.Size(305, 823);
+            this.listBoxPositions.Size = new System.Drawing.Size(305, 784);
             this.listBoxPositions.TabIndex = 16;
             // 
             // listViewLog
@@ -146,13 +147,14 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.ckPlayLoop);
             this.panel1.Controls.Add(this.btnSalvaSetCorrente);
             this.panel1.Controls.Add(this.btnClear);
             this.panel1.Controls.Add(this.btnSavePosition);
             this.panel1.Controls.Add(this.btnPlayPosition);
             this.panel1.Location = new System.Drawing.Point(6, 8);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(305, 31);
+            this.panel1.Size = new System.Drawing.Size(305, 63);
             this.panel1.TabIndex = 17;
             // 
             // btnSalvaSetCorrente
@@ -746,6 +748,17 @@
             this.kryptonButton2.Values.Text = "Stream ON/OFF";
             this.kryptonButton2.Click += new System.EventHandler(this.kryptonButton2_Click);
             // 
+            // ckPlayLoop
+            // 
+            this.ckPlayLoop.AutoSize = true;
+            this.ckPlayLoop.Location = new System.Drawing.Point(4, 36);
+            this.ckPlayLoop.Name = "ckPlayLoop";
+            this.ckPlayLoop.Size = new System.Drawing.Size(73, 17);
+            this.ckPlayLoop.TabIndex = 28;
+            this.ckPlayLoop.Text = "Play Loop";
+            this.ckPlayLoop.UseVisualStyleBackColor = true;
+            this.ckPlayLoop.CheckedChanged += new System.EventHandler(this.ckPlayLoop_CheckedChanged);
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -784,6 +797,7 @@
             this.Text = "Robotic Arm Experiment";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).EndInit();
             this.gpMagnetState.Panel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).EndInit();
@@ -864,6 +878,7 @@
         private System.Windows.Forms.TextBox txtToSend;
         private Krypton.Toolkit.KryptonButton btnSend;
         private Krypton.Toolkit.KryptonButton btnClearLogs;
+        private System.Windows.Forms.CheckBox ckPlayLoop;
     }
 }
 
