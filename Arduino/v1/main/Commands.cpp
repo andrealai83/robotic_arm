@@ -10,10 +10,10 @@
 // gain: quanti passi/secondo si vogliono a m=100
 // ===== Tuning =====
 static const int   VEL_DEADBAND = 2;        // velocità assoluta <= 2 => 0
-static float GAIN_STEPS_PER_S_100_M1 = 400; // passi/s a m=100
-static float GAIN_STEPS_PER_S_100_M2 = 400;
-static float GAIN_STEPS_PER_S_100_M3 = 400;
-static float GAIN_STEPS_PER_S_100_M4 = 400;
+static float GAIN_STEPS_PER_S_100_M1 = 2000; // passi/s a m=100
+static float GAIN_STEPS_PER_S_100_M2 = 2000;
+static float GAIN_STEPS_PER_S_100_M3 = 2000;
+static float GAIN_STEPS_PER_S_100_M4 = 2000;
 
 // limiti meccanici (in passi) 
 static long LIM_MIN_M1 = 0, LIM_MAX_M1 = 360;

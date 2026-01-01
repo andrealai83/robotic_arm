@@ -233,7 +233,7 @@ void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
   }
 
   // Definisci la velocità base per l'homing
-  int baseHomingSpeed = 2000;
+  int baseHomingSpeed = maxSpeed;
   
   // Calcola velocità effettiva basata sulla direzione configurata
   // Se homingDir è -1 (standard), speed sarà -2000

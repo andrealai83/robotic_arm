@@ -118,7 +118,7 @@ namespace Braccio_Robotico
             { 
                 btnConnect.Enabled = false;
                 btnDisconnect.Enabled = true; 
-                RobotConfig.SendConfiguration(serialManager.Port);
+                //RobotConfig.SendConfiguration(serialManager.Port);
             }
         }
 
