@@ -152,7 +152,7 @@ void handleSerial()
   while (Serial.available())
   {
     char c = (char)Serial.read();
-    if (c == '\r')
+    if (c == '\r') continue; // Ignora carriage return
     if (c == '\n')
     {
       line.trim();

@@ -6,7 +6,7 @@
 #include "RobotLink.h" 
 
 // Istanza del link radio (CE=9, CSN=10)
-RobotLink radioLink(16, 17);
+RobotLink radioLink(48, 49);
 
 extern char __bss_end; 
 extern char *__brkval;
@@ -54,12 +54,7 @@ void loop() {
 
   encoderUpdate();
  
-  // Aggiornamento periodico display per feedback visivo endstop (ogni 200ms)
-  // static unsigned long lastDisplayUpdate = 0;
-  // if(millis() - lastDisplayUpdate > 200){
-  //    lastDisplayUpdate = millis();
-  //    aggiornaDisplay();
-  // }
+
    
 }
  

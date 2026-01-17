@@ -56,7 +56,7 @@ namespace Braccio_Robotico
                 {
                     try
                     {
-                        string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.C}\nRUN\n";
+                        string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.GRIP}\nRUN\n";
                         serialManager.Port.Write(comando);
                         Console.WriteLine($"Command sent:\n{comando}");
 

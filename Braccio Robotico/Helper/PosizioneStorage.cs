@@ -38,7 +38,7 @@ namespace Braccio_Robotico.Helper
                         insertMov.Parameters.AddWithValue("@y", m.M2);
                         insertMov.Parameters.AddWithValue("@z", m.M4);
                         insertMov.Parameters.AddWithValue("@a", m.M3);
-                        insertMov.Parameters.AddWithValue("@c", m.C);
+                        insertMov.Parameters.AddWithValue("@c", m.GRIP);
                         insertMov.ExecuteNonQuery();
                     }
 
@@ -69,7 +69,7 @@ namespace Braccio_Robotico.Helper
                             M2 = reader.GetInt32(1),
                             M4 = reader.GetInt32(2),
                             M3 = reader.GetInt32(3),
-                            C = reader.GetString(4)
+                            GRIP = reader.GetString(4)
                         });
                     }
                 }

@@ -13,7 +13,7 @@ namespace Braccio_Robotico.Helper
         public double M2 { get; set; }
         public double M4 { get; set; }
         public double M3 { get; set; }
-        public string C { get; set; }
-        public override string ToString() => $"M2: {M2} | M1: {M1} | M4: {M4} | M3: {M3} | {C}";
+        public string GRIP { get; set; }
+        public override string ToString() => $"M2: {M2} | M1: {M1} | M4: {M4} | M3: {M3} | {GRIP}";
     }
 }

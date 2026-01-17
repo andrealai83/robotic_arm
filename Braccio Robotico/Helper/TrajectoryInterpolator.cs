@@ -68,7 +68,7 @@ namespace Braccio_Robotico.Helper
                 M3 = Lerp(from.M3, to.M3, t),
                 M4 = Lerp(from.M4, to.M4, t),
                 // La calamita cambia stato solo alla fine della transizione
-                C = t < 1.0 ? from.C : to.C
+                GRIP =  to.GRIP
             };
         }
 

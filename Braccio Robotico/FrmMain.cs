@@ -114,7 +114,7 @@ namespace Braccio_Robotico
             { 
                 btnConnect.Enabled = false;
                 btnDisconnect.Enabled = true; 
-                //RobotConfig.SendConfiguration(serialManager.Port);
+                RobotConfig.SendConfiguration(serialManager.Port);
             }
         }
 
@@ -146,7 +146,7 @@ namespace Braccio_Robotico
                 M1 = trackBar1.Value,
                 M4 = trackBar4.Value,
                 M3 = trackBar3.Value,
-                C = MagState
+                GRIP =  pinza ? "GRIP:120" : "GRIP:0"
             };
 
             movimentoManager.Add(mov);
@@ -179,7 +179,7 @@ namespace Braccio_Robotico
             {
                 try
                 {
-                    string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.C}\nRUN\n";
+                    string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.GRIP}\nRUN\n";
                     serialManager.Port.Write(comando);
                     history.Add(movi);
 
@@ -326,7 +326,7 @@ namespace Braccio_Robotico
                 M2 = trackBar2.Value,
                 M3 = trackBar3.Value,
                 M4 = trackBar4.Value,
-                C = MagState
+                GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
 
              viewer3D.UpdateAngles(
@@ -347,7 +347,7 @@ namespace Braccio_Robotico
                 M2 = trackBar2.Value,
                 M3 = trackBar3.Value,
                 M4 = trackBar4.Value,
-                C = MagState
+                GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
             viewer3D.UpdateAngles(
                 trackBar1.Value,  // Y → base
@@ -367,7 +367,7 @@ namespace Braccio_Robotico
                 M2 = trackBar2.Value,
                 M3 = trackBar3.Value,
                 M4 = trackBar4.Value,
-                C = MagState
+                GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
 
             viewer3D.UpdateAngles(
@@ -387,8 +387,8 @@ namespace Braccio_Robotico
                 M1 = trackBar1.Value,
                 M2 = trackBar2.Value,
                 M3 = trackBar3.Value,
-                M4 = trackBar4.Value, 
-                C = MagState
+                M4 = trackBar4.Value,
+                GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
 
             viewer3D.UpdateAngles(
@@ -509,7 +509,7 @@ namespace Braccio_Robotico
                         M1 = trackBar1.Value,
                         M4 = trackBar4.Value,
                         M3 = trackBar3.Value,
-                        C = MagState
+                        GRIP = pinza ? "GRIP:120" : "GRIP:0"
                     };
 
                     movimentoManager.Add(mov);
@@ -617,7 +617,7 @@ namespace Braccio_Robotico
                         M2 = Clamp360((int)Math.Round(d.M2)),
                         M3 = Clamp360((int)Math.Round(d.M3)),
                         M4 = Clamp360((int)Math.Round(d.M4)),
-                        C = d.C ?? string.Empty
+                        GRIP = d.GRIP ?? string.Empty
                     }).ToList();
 
                     foreach (var mov in mapped)

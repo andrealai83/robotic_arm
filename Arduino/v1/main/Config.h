@@ -10,7 +10,7 @@ extern int ENA4, DIR4, PUL4;
 extern int ENAP, DIRP, PULP;
 
 // Altri pin
-#define TRANSISTOR_PIN A10
+#define TRANSISTOR_PIN A8
 #define ENDSTOP_1_PIN A2
 #define ENDSTOP_2_PIN A3
 #define ENDSTOP_3_PIN A4

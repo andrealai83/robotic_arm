@@ -137,7 +137,7 @@ namespace Braccio_Robotico.Helper
                 M2 = m2,
                 M3 = m3,
                 M4 = m4,
-                C = currentAngles?.C ?? "C:0"
+                GRIP = currentAngles?.GRIP ?? "GRIP:0"
             };
         }
 
@@ -176,7 +176,7 @@ namespace Braccio_Robotico.Helper
                 
                 if (intermediateMov != null)
                 {
-                    intermediateMov.C = from.C; // Mantieni lo stato della calamita
+                    intermediateMov.GRIP = from.GRIP; // Mantieni lo stato della calamita
                     trajectory.Add(intermediateMov);
                 }
                 else
@@ -188,7 +188,7 @@ namespace Braccio_Robotico.Helper
                         M2 = Lerp(from.M2, to.M2, t),
                         M3 = Lerp(from.M3, to.M3, t),
                         M4 = Lerp(from.M4, to.M4, t),
-                        C = from.C
+                        GRIP = from.GRIP
                     });
                 }
             }

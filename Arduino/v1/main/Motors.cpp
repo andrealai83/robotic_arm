@@ -117,28 +117,65 @@ void startCoordinatedMove() {
 void handleMotors() {
   
   if (movingCoordinated) {
-    // Esegui run() per tutti i motori
-    bool running = false;
+    // Esegui run() per tutti i motori in un loop BLOCCANTE
+    // Questo evita la latenza del loop() principale (Serial, LCD, ecc.)
+    // rendendo il movimento fluido come l'homing.
 
-    // run() ritorna true se il motore è ancora in movimento
-    if (motore1.distanceToGo() != 0) { motore1.run(); running = true; }
-    if (motore2.distanceToGo() != 0) { motore2.run(); running = true; }
-    if (motore3.distanceToGo() != 0) { motore3.run(); running = true; }
-    if (motore4.distanceToGo() != 0) { motore4.run(); running = true; }
+    bool emergencyStop = false;
 
-    if (!running) {
-      movingCoordinated = false;
-      
-      // Ripristina velocità originali (opzionale, ma buona pratica)
-      motore1.setMaxSpeed(maxSpeed); motore1.setAcceleration(maxAccel);
-      motore2.setMaxSpeed(maxSpeed); motore2.setAcceleration(maxAccel);
-      motore3.setMaxSpeed(maxSpeed); motore3.setAcceleration(maxAccel);
-      motore4.setMaxSpeed(maxSpeed); motore4.setAcceleration(maxAccel);
+    // Loop dedicato "tight"
+    while (true) {
+        bool running = false;
 
-      Serial.println("ready");
+        // 1. Step motori (priorità massima)
+        if (motore1.distanceToGo() != 0) { motore1.run(); running = true; }
+        if (motore2.distanceToGo() != 0) { motore2.run(); running = true; }
+        if (motore3.distanceToGo() != 0) { motore3.run(); running = true; }
+        if (motore4.distanceToGo() != 0) { motore4.run(); running = true; }
+
+        // 2. Controllo Stop Button (safety check rapido)
+        // Usiamo digitalRead diretto per non perdere tempo
+        if (digitalRead(BTN_STOP_PIN) == LOW) {
+            emergencyStop = true;
+            break; 
+        }
+
+        // 3. Se nessun motore si muove, abbiamo finito
+        if (!running) {
+            break; 
+        }
     }
+
+    if (emergencyStop) {
+        // Stop immediato
+        motore1.stop(); motore1.setCurrentPosition(motore1.currentPosition());
+        motore2.stop(); motore2.setCurrentPosition(motore2.currentPosition());
+        motore3.stop(); motore3.setCurrentPosition(motore3.currentPosition());
+        motore4.stop(); motore4.setCurrentPosition(motore4.currentPosition());
+        
+        // Reset flag
+        motore1Completato = true;
+        motore2Completato = true;
+        motore3Completato = true;
+        motore4Completato = true;
+        eseguiMovimento = false;
+        
+        Serial.println(F("STOP Button Detected during move!"));
+        // mostraMessaggio("STOP EMERGENCY"); // Opzionale, richiede Display.h
+    }
+
+    movingCoordinated = false;
+      
+    // Ripristina velocità originali
+    motore1.setMaxSpeed(maxSpeed); motore1.setAcceleration(maxAccel);
+    motore2.setMaxSpeed(maxSpeed); motore2.setAcceleration(maxAccel);
+    motore3.setMaxSpeed(maxSpeed); motore3.setAcceleration(maxAccel);
+    motore4.setMaxSpeed(maxSpeed); motore4.setAcceleration(maxAccel);
+
+    Serial.println("ready");
+
   } else {
-    // Modalità manuale indipendente
+    // Modalità manuale indipendente (non usata per movimenti lunghi coord)
     checkMotor(motore1, motore1Completato, ENDSTOP_1_PIN);
     checkMotor(motore2, motore2Completato, ENDSTOP_2_PIN);
     checkMotor(motore3, motore3Completato, ENDSTOP_3_PIN);
@@ -233,7 +270,7 @@ void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
     return;
   }
 
-  int baseHomingSpeed = maxSpeed;
+  int baseHomingSpeed = 1000; //maxSpeed;
   
   // Calcola velocità effettiva basata sulla direzione configurata
   // Se homingDir è -1 (standard), speed sarà -2000
@@ -262,7 +299,7 @@ void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
 
   int gradiBackoff = 5;
   long passiBackoff = (long)(gradiBackoff * passiPerGrado);
-  motore.moveTo(passiBackoff);
+  //motore.moveTo(passiBackoff);
   while (motore.distanceToGo() != 0) motore.run();
   motore.setCurrentPosition(0);
   Serial.println(F("Backoff completato"));
