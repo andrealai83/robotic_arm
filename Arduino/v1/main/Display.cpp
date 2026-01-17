@@ -9,9 +9,21 @@ bool bluetoothConnesso(){
   return digitalRead(BT_STATE_PIN) == HIGH;
 }
 
+byte charEndStop[8] = {
+  B00000,
+  B01110,
+  B11111,
+  B11111,
+  B11111,
+  B01110,
+  B00000,
+  B00000
+};
+
 void setupDisplay(){
   lcd.init();
   lcd.backlight();
+  lcd.createChar(1, charEndStop); // Custom char for Active Endstop
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("Motori Pronti");
@@ -21,15 +33,21 @@ void setupDisplay(){
 
 void aggiornaDisplay(){
   lcd.setCursor(0, 0);
-  lcd.print("M1:");
+  lcd.print("M1");
+  if(digitalRead(ENDSTOP_1_PIN)==LOW) lcd.write(1); else lcd.print(":");
   lcd.print(target1);
-  lcd.print(" M2:");
+  
+  lcd.print(" M2");
+  if(digitalRead(ENDSTOP_2_PIN)==LOW) lcd.write(1); else lcd.print(":");
   lcd.print(target2);
 
   lcd.setCursor(0, 1);
-  lcd.print("M3:");
+  lcd.print("M3");
+  if(digitalRead(ENDSTOP_3_PIN)==LOW) lcd.write(1); else lcd.print(":");
   lcd.print(target3);
-  lcd.print(" M4:");
+  
+  lcd.print(" M4");
+  if(digitalRead(ENDSTOP_4_PIN)==LOW) lcd.write(1); else lcd.print(":");
   lcd.print(target4);
 
   lcd.setCursor(15, 1);

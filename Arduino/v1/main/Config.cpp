@@ -3,7 +3,7 @@
 // PIN motori
 int ENA4 = 13, DIR4 = 12, PUL4 = 11;
 int ENA1 = 10, DIR1 = 9,  PUL1 = 8;
-int ENA3 = 7,  DIR3 = 6,  PUL3 = 5; //MOTORE 2
+int ENA3 = 7,  DIR3 = 6,  PUL3 = 5;
 int ENA2 = 4,  DIR2 = 3,  PUL2 = 2;
 int ENAP = 19, DIRP = 21, PULP = 20;
 
@@ -22,7 +22,7 @@ double rapportoPlanetario = 14.2;
 float moltiplicaRapportoPlanetario = 28.0f;
 double passiPerGrado = 0.0;
 int maxSpeed = 2000;
-int maxAccel = 100000;  // Rampa rimossa (accelerazione brutale)
+int maxAccel = 100000;
 
 bool motorsEnabled = true;          
 const bool EN_ACTIVE_HIGH = true;  

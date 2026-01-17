@@ -1,0 +1,32 @@
+# version: '3.8' # Obsolete in newer Docker Compose versions
+
+services:
+  backend:
+    build: ./backend
+    container_name: robot-backend
+    restart: always
+    ports:
+      - "3000:3000"
+
+    # ---------------------------------------------------------
+    # RASPBERRY PI CONFIGURATION
+    # Uncomment 'devices' and 'privileged' when running on the Pi
+    # to give access to the USB Serial Port.
+    # ---------------------------------------------------------
+    # devices:
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    # privileged: true
+
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data
+
+  frontend:
+    build: ./frontend
+    container_name: robot-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

@@ -32,9 +32,7 @@ static unsigned long lastRfMs = 0;         // watchdog RF
 #define ENABLE_MOVE_MSG      0       
 #define MOVE_MSG_PERIOD_MS   150
 
-// target* esistono già globali nel tuo progetto; li usiamo.
 // extern long target1, target2, target3, target4; // se servisse
-
 static inline int16_t clamp16(long v){
   if (v < -32768L) return -32768;
   if (v >  32767L) return  32767;
@@ -72,7 +70,6 @@ void applyCommand(const Payload& p)
   }
 }
 
-// === TICK DI INTEGRAZIONE ===
 static float r1=0, r2=0, r3=0, r4=0;  
 
 void joystickVelocityUpdate() {
@@ -156,17 +153,16 @@ void handleSerial()
   {
     char c = (char)Serial.read();
     if (c == '\r')
-      continue; // ignora CR (per CRLF da Windows)
     if (c == '\n')
-    { // riga completa -> parse
+    {
       line.trim();
       if (line.length())
         parseCommandLine(line);
-      line = ""; // reset buffer
+      line = "";
     }
     else
     {
-      line += c; // accumula
+      line += c;
     }
   }
 }
@@ -189,14 +185,14 @@ void parseCommandLine(String s)
 }
  
 static void showMoveMsg(const char* label, int v) {
-#if ENABLE_MOVE_MSG
-  static unsigned long last=0;
-  if (millis() - last < MOVE_MSG_PERIOD_MS) return;
-  last = millis();
-  char msg[24];
-  snprintf(msg, sizeof(msg), "%s%d", label, v);
-  mostraMessaggio(msg);
-#endif
+  #if ENABLE_MOVE_MSG
+    static unsigned long last=0;
+    if (millis() - last < MOVE_MSG_PERIOD_MS) return;
+    last = millis();
+    char msg[24];
+    snprintf(msg, sizeof(msg), "%s%d", label, v);
+    mostraMessaggio(msg);
+  #endif
 }
 
 void processToken(const String &cmd)
@@ -246,15 +242,18 @@ void processToken(const String &cmd)
     motore4Completato = false;
     return;
   }
+  if (cmd.startsWith(F("GRIP:"))) {
+    int angle = atoi(cmd.c_str() + 5);
+    setGripperAngle(angle);
+    mostraMessaggio("GRIP:" + String(angle));
+    return;
+  }
 
   if (cmd == F("EXEC") || cmd == F("RUN")) {
     // Prima di eseguire, sincronizza i target con le posizioni correnti
     // Questo previene movimenti indesiderati di assi non comandati esplicitamente
     // (es. se fai solo M1:90, M2/M3/M4 non devono muoversi)
-    
-    // Nota: se un asse non è stato comandato dall'ultimo EXEC, mantiene il target precedente
-    // Questo è intenzionale per permettere comandi sequenziali tipo: M1:90; EXEC; M2:45; EXEC
-    
+        
     startCoordinatedMove();
     mostraMessaggio("EXEC");
     return;
@@ -273,7 +272,6 @@ void processToken(const String &cmd)
   if (cmd == F("HOMING") || cmd == F("HOME")) {
     mostraMessaggio("HOMING...");
     homingMotor(motore1, ENDSTOP_1_PIN, 0);
-    // Nota: Il motore 2 userà la config centralizzata per decidere la direzione
     homingMotor(motore2, ENDSTOP_2_PIN, 1);
     homingMotor(motore3, ENDSTOP_3_PIN, 2);
     homingMotor(motore4, ENDSTOP_4_PIN, 3);
@@ -330,10 +328,12 @@ void processToken(const String &cmd)
     Serial.println(F("ok"));
     return;
   }
+
   if (cmd == F("STREAM:1")) {
     encoderStreamOn = true;
     return;
   }
+
   if (cmd == F("STREAM:0")) {
     encoderStreamOn = false;
     return;
@@ -383,9 +383,9 @@ void handleButtons()
 void checkEndStop() {
 
   String ENDSTOP_1_STATE = digitalRead(ENDSTOP_1_PIN) == LOW ? "LOW" : "HIGH";
- String ENDSTOP_2_STATE = digitalRead(ENDSTOP_2_PIN) == LOW ? "LOW" : "HIGH";
- String ENDSTOP_3_STATE = digitalRead(ENDSTOP_3_PIN) == LOW ? "LOW" : "HIGH";
- String ENDSTOP_4_STATE = digitalRead(ENDSTOP_4_PIN) == LOW ? "LOW" : "HIGH";
+  String ENDSTOP_2_STATE = digitalRead(ENDSTOP_2_PIN) == LOW ? "LOW" : "HIGH";
+  String ENDSTOP_3_STATE = digitalRead(ENDSTOP_3_PIN) == LOW ? "LOW" : "HIGH";
+  String ENDSTOP_4_STATE = digitalRead(ENDSTOP_4_PIN) == LOW ? "LOW" : "HIGH";
  
  if ( ENDSTOP_1_STATE == "LOW")
   {  

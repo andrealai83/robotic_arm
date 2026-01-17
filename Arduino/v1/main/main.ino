@@ -6,7 +6,7 @@
 #include "RobotLink.h" 
 
 // Istanza del link radio (CE=9, CSN=10)
-RobotLink radioLink(14, 15);
+RobotLink radioLink(16, 17);
 
 extern char __bss_end; 
 extern char *__brkval;
@@ -25,6 +25,7 @@ void setup() {
 
   setupPins();
   setupMotors();
+  setupGripper();
   setupDisplay();
   encoderSetup();
 
@@ -47,26 +48,18 @@ void loop() {
 
   handleButtons();
 
-  //checkEndStop();
-
   //joystickVelocityUpdate();   
 
   handleMotors();    
 
   encoderUpdate();
  
-  // completamento movimento coordinato
-//  if (eseguiMovimento && motore1Completato && motore2Completato && motore3Completato && motore4Completato) {
-//      Serial.println(F("ready"));
-//      String MagnetState = calamitaAttiva ? ";C:1" : ";C:0";
-//      String SaveRequestReceived = saveRequest ? ";SAVE:1" : ";SAVE:0";
-//      String posizione = "NEWPOSITION:M1:" + String(target1) + ";M2:" + String(target2) + ";M3:" + String(target3) + ";M4:" + String(target4) + MagnetState + SaveRequestReceived;
-//      saveRequest = 0;
-//      Serial.println(posizione);
-//     eseguiMovimento = false;
-//  }
-
-
+  // Aggiornamento periodico display per feedback visivo endstop (ogni 200ms)
+  // static unsigned long lastDisplayUpdate = 0;
+  // if(millis() - lastDisplayUpdate > 200){
+  //    lastDisplayUpdate = millis();
+  //    aggiornaDisplay();
+  // }
    
 }
  

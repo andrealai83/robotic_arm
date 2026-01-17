@@ -7,6 +7,7 @@ AccelStepper motore1(AccelStepper::DRIVER, PUL1, DIR1);
 AccelStepper motore2(AccelStepper::DRIVER, PUL2, DIR2);
 AccelStepper motore3(AccelStepper::DRIVER, PUL3, DIR3);
 AccelStepper motore4(AccelStepper::DRIVER, PUL4, DIR4);
+Servo gripper;
 
 bool motore1Completato = true;
 bool motore2Completato = true;
@@ -24,7 +25,7 @@ MotorConfig motorConfigs[4] = {
     { false, -1 }, // Motore 1: Rotazione Normale, Homing verso Negativo
     { true,  -1 }, // Motore 2: Rotazione Invertita, Homing verso Positivo
     { true, -1 }, // Motore 3: Rotazione Normale, Homing verso Negativo
-    { false, -1 }  // Motore 4: Rotazione Normale, Homing verso Negativo
+    { true, -1 }  // Motore 4: Rotazione Normale, Homing verso Negativo
 };
 
 void setupMotors(){
@@ -232,7 +233,6 @@ void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
     return;
   }
 
-  // Definisci la velocità base per l'homing
   int baseHomingSpeed = maxSpeed;
   
   // Calcola velocità effettiva basata sulla direzione configurata
@@ -278,4 +278,15 @@ void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
   encoderZero(5);  // Motor 5
 
   mostraMessaggio("Pronto");
+}
+
+void setupGripper() {
+  gripper.attach(GRIPPER_PIN);
+  gripper.write(90); // Default position
+}
+
+void setGripperAngle(int angle) {
+  if (angle < 0) angle = 0;
+  if (angle > 180) angle = 180;
+  gripper.write(angle);
 }

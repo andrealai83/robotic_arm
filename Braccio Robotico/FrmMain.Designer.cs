@@ -33,6 +33,7 @@
             this.colTimestamp = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.colMessage = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.panel1 = new System.Windows.Forms.Panel();
+            this.ckPlayLoop = new System.Windows.Forms.CheckBox();
             this.btnSalvaSetCorrente = new Krypton.Toolkit.KryptonButton();
             this.btnClear = new Krypton.Toolkit.KryptonButton();
             this.btnSavePosition = new Krypton.Toolkit.KryptonButton();
@@ -76,7 +77,7 @@
             this.btnMotorOFF = new Krypton.Toolkit.KryptonButton();
             this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
             this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
-            this.ckPlayLoop = new System.Windows.Forms.CheckBox();
+            this.button1 = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -156,6 +157,17 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(305, 63);
             this.panel1.TabIndex = 17;
+            // 
+            // ckPlayLoop
+            // 
+            this.ckPlayLoop.AutoSize = true;
+            this.ckPlayLoop.Location = new System.Drawing.Point(4, 36);
+            this.ckPlayLoop.Name = "ckPlayLoop";
+            this.ckPlayLoop.Size = new System.Drawing.Size(73, 17);
+            this.ckPlayLoop.TabIndex = 28;
+            this.ckPlayLoop.Text = "Play Loop";
+            this.ckPlayLoop.UseVisualStyleBackColor = true;
+            this.ckPlayLoop.CheckedChanged += new System.EventHandler(this.ckPlayLoop_CheckedChanged);
             // 
             // btnSalvaSetCorrente
             // 
@@ -252,7 +264,7 @@
             // trackBar1
             // 
             this.trackBar1.Location = new System.Drawing.Point(12, 205);
-            this.trackBar1.Maximum = 160;
+            this.trackBar1.Maximum = 360;
             this.trackBar1.Name = "trackBar1";
             this.trackBar1.Size = new System.Drawing.Size(686, 34);
             this.trackBar1.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -286,7 +298,7 @@
             // trackBar2
             // 
             this.trackBar2.Location = new System.Drawing.Point(11, 167);
-            this.trackBar2.Maximum = 160;
+            this.trackBar2.Maximum = 360;
             this.trackBar2.Name = "trackBar2";
             this.trackBar2.Size = new System.Drawing.Size(686, 34);
             this.trackBar2.StateNormal.Tick.Color1 = System.Drawing.Color.White;
@@ -722,9 +734,9 @@
             // trackBarP
             // 
             this.trackBarP.Location = new System.Drawing.Point(865, 205);
-            this.trackBarP.Maximum = 360;
+            this.trackBarP.Maximum = 120;
             this.trackBarP.Name = "trackBarP";
-            this.trackBarP.Size = new System.Drawing.Size(381, 34);
+            this.trackBarP.Size = new System.Drawing.Size(165, 34);
             this.trackBarP.StateNormal.Tick.Color1 = System.Drawing.Color.White;
             this.trackBarP.StateNormal.Tick.Color2 = System.Drawing.Color.Empty;
             this.trackBarP.StateNormal.Tick.Color3 = System.Drawing.Color.Empty;
@@ -748,22 +760,22 @@
             this.kryptonButton2.Values.Text = "Stream ON/OFF";
             this.kryptonButton2.Click += new System.EventHandler(this.kryptonButton2_Click);
             // 
-            // ckPlayLoop
+            // button1
             // 
-            this.ckPlayLoop.AutoSize = true;
-            this.ckPlayLoop.Location = new System.Drawing.Point(4, 36);
-            this.ckPlayLoop.Name = "ckPlayLoop";
-            this.ckPlayLoop.Size = new System.Drawing.Size(73, 17);
-            this.ckPlayLoop.TabIndex = 28;
-            this.ckPlayLoop.Text = "Play Loop";
-            this.ckPlayLoop.UseVisualStyleBackColor = true;
-            this.ckPlayLoop.CheckedChanged += new System.EventHandler(this.ckPlayLoop_CheckedChanged);
+            this.button1.Location = new System.Drawing.Point(1036, 204);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(210, 35);
+            this.button1.TabIndex = 65;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(2132, 924);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.kryptonButton2);
             this.Controls.Add(this.trackBarP);
             this.Controls.Add(this.grpMotor);
@@ -879,6 +891,7 @@
         private Krypton.Toolkit.KryptonButton btnSend;
         private Krypton.Toolkit.KryptonButton btnClearLogs;
         private System.Windows.Forms.CheckBox ckPlayLoop;
+        private System.Windows.Forms.Button button1;
     }
 }
 

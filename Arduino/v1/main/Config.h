@@ -11,11 +11,12 @@ extern int ENAP, DIRP, PULP;
 
 // Altri pin
 #define TRANSISTOR_PIN A10
-#define ENDSTOP_1_PIN A2 //MOTORE 1
+#define ENDSTOP_1_PIN A2
 #define ENDSTOP_2_PIN A3
 #define ENDSTOP_3_PIN A4
 #define ENDSTOP_4_PIN A5
 #define ENDSTOP_P_PIN A6
+#define GRIPPER_PIN 15
 #define BT_STATE_PIN   A7
 #define BTN_HOMING_PIN A0
 #define BTN_STOP_PIN   A1

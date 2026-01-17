@@ -1,0 +1,145 @@
+<div class="container">
+    <header class="header">
+        <div>
+            <h1 class="title">Robot Control</h1>
+            <p style="color: var(--text-secondary);">Raspberry Pi Controller</p>
+        </div>
+
+        <div class="controls">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:12px; height:12px; border-radius:50%;"
+                    [style.background-color]="robotService.connectionStatus() === 'connected' ? 'var(--accent-green)' : 'red'">
+                </div>
+                <span>{{ robotService.connectionStatus() | titlecase }}</span>
+            </div>
+
+            <select [(ngModel)]="selectedPort">
+                <option *ngFor="let p of ports" [value]="p">{{p}}</option>
+            </select>
+
+            <button (click)="connect()" class="btn-primary">Connect</button>
+            <button (click)="refreshPorts()" class="btn-icon">↻</button>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- Manual Control -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="margin-top:0;">🎮 Joint Control</h2>
+                <button (click)="home('all')" class="btn-primary"
+                    style="background:var(--accent-purple); font-size:0.8rem;">
+                    🏠 Home All
+                </button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <div class="row">
+                        <label>Base (M1)</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span style="color:var(--accent-blue)">{{m1}}°</span>
+                            <button (click)="home('1')"
+                                style="padding:2px 6px; font-size:0.7rem; background:#374151; color:#9ca3af;">⌂</button>
+                        </div>
+                    </div>
+                    <input type="range" min="0" max="180" [(ngModel)]="m1" (change)="onSliderChange()">
+                </div>
+
+                <div>
+                    <div class="row">
+                        <label>Shoulder (M2)</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span style="color:var(--accent-purple)">{{m2}}°</span>
+                            <button (click)="home('2')"
+                                style="padding:2px 6px; font-size:0.7rem; background:#374151; color:#9ca3af;">⌂</button>
+                        </div>
+                    </div>
+                    <input type="range" min="15" max="165" [(ngModel)]="m2" (change)="onSliderChange()">
+                </div>
+
+                <div>
+                    <div class="row">
+                        <label>Elbow (M3)</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span style="color: #ec4899;">{{m3}}°</span>
+                            <button (click)="home('3')"
+                                style="padding:2px 6px; font-size:0.7rem; background:#374151; color:#9ca3af;">⌂</button>
+                        </div>
+                    </div>
+                    <input type="range" min="0" max="180" [(ngModel)]="m3" (change)="onSliderChange()">
+                </div>
+
+                <div>
+                    <div class="row">
+                        <label>Wrist (M4)</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span style="color: #f97316;">{{m4}}°</span>
+                            <button (click)="home('4')"
+                                style="padding:2px 6px; font-size:0.7rem; background:#374151; color:#9ca3af;">⌂</button>
+                        </div>
+                    </div>
+                    <input type="range" min="0" max="180" [(ngModel)]="m4" (change)="onSliderChange()">
+                </div>
+
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
+                    <label>🧲 Magnet</label>
+                    <button (click)="magnet = !magnet; onSliderChange()"
+                        [style.background]="magnet ? 'var(--accent-green)' : '#4b5563'"
+                        style="color:white; padding: 6px 12px;">
+                        {{ magnet ? 'ON' : 'OFF' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- IK & Sequences -->
+        <div style="display:flex; flex-direction:column; gap:2rem;">
+            <!-- IK -->
+            <div class="card">
+                <h2 style="margin-top:0;">📍 Coordinate Control (IK)</h2>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1rem;">
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-secondary)">X (cm)</label>
+                        <input type="number" [(ngModel)]="x">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-secondary)">Y (cm)</label>
+                        <input type="number" [(ngModel)]="y">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-secondary)">Z (cm)</label>
+                        <input type="number" [(ngModel)]="z">
+                    </div>
+                </div>
+
+                <button (click)="sendCartesian()" class="btn-primary"
+                    style="width:100%; padding:12px; background: linear-gradient(to right, var(--accent-purple), #ec4899);">
+                    Move to Coordinates
+                </button>
+            </div>
+
+            <!-- Sequences -->
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h2 style="margin:0;">🎬 Sequences</h2>
+                    <button (click)="refreshSequences()"
+                        style="background:none; color:var(--text-secondary)">Refresh</button>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;">
+                    <div *ngFor="let seq of sequences"
+                        style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:6px;">
+                        <span>{{seq.name}}</span>
+                        <button (click)="runSequence(seq.id)"
+                            style="background:rgba(34,197,94,0.2); color:var(--accent-green); padding:4px 8px;">
+                            Run ►
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,6 @@
 #pragma once
 #include <AccelStepper.h>
+#include <Servo.h>
 #include "Config.h"
 
 
@@ -30,6 +31,11 @@ void checkMotor(AccelStepper& motore, bool& completato, int endstopPin);
 void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex); // Aggiunto indice per recuperare config
 void handleMotors();
 void moveAllToDegrees(int g1,int g2,int g3,int g4);
+
+// Gripper
+extern Servo gripper;
+void setupGripper();
+void setGripperAngle(int angle);
 
 // Nuova gestione coordinata scalata
 void startCoordinatedMove();   

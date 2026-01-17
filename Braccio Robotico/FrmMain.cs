@@ -61,10 +61,8 @@ namespace Braccio_Robotico
                 if (double.TryParse(M1, NumberStyles.Float, CultureInfo.InvariantCulture, out var deg))
                 {
                     trackBarNumeric1.Value = (int)Math.Round(deg);
-                    if (deg <= 160)
                         trackBar1.Value = (int)Math.Round(deg);
-                    else
-                        trackBar1.Value = 160;
+                 
                 }
 
 
@@ -72,10 +70,8 @@ namespace Braccio_Robotico
                 { 
 
                     trackBarNumeric2.Value = (int)Math.Round(deg2);
-                    if (deg <= 160)
-                        trackBar2.Value = (int)Math.Round(deg2);
-                    else
-                        trackBar2.Value = 160;
+                    trackBar2.Value = (int)Math.Round(deg2);
+                    
                 }
 
 
@@ -674,8 +670,8 @@ namespace Braccio_Robotico
         }
 
         private void trackBarP_ValueChanged(object sender, EventArgs e)
-        {
-
+        { 
+            serialManager.Write("GRIP:" + trackBarP.Value.ToString());
         }
 
         private async void ckPlayLoop_CheckedChanged(object sender, EventArgs e)
@@ -688,6 +684,15 @@ namespace Braccio_Robotico
                     await Task.Delay(200);
                 }
             }
+        }
+
+        bool pinza = false;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string MotorStream = pinza ? "GRIP:120" : "GRIP:0";
+            serialManager.Write(MotorStream);
+            pinza = !pinza;
         }
     }
 }
