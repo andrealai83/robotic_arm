@@ -46,6 +46,7 @@ void moveAllToDegrees(int g1,int g2,int g3,int g4){
 }
 
 // Esegue movimento coordinato scalando le velocità
+// Esegue movimento coordinato scalando le velocità
 void startCoordinatedMove() {
   // 1. Calcola posizione attuale e target in passi
   long current1 = motore1.currentPosition();
@@ -77,18 +78,37 @@ void startCoordinatedMove() {
     return;
   }
 
-  // 4. Calcola e imposta velocità/accelerazione scalate per ogni motore
+  // Calcola e imposta velocità/accelerazione scalate per ogni motore
   // Il motore che deve fare più strada andrà a velocità piena (maxSpeed).
-  // Gli altri andranno in proporzione: ratio = dist / maxDist
+  // Gli altri andranno in proporzione, MA con un limite minimo di velocità
+  // per evitare risonanze e rumori (scattosità).
   
+  const float MIN_SPEED_THRESHOLD = 200.0f; // Velocità minima (step/sec) sotto la quale non scendiamo
+  const float MIN_ACCEL_THRESHOLD = 100.0f; 
+
   auto setupAxis = [&](AccelStepper& m, long dist) {
       if (dist == 0) {
-          m.setMaxSpeed(100.0f); // Velocità minima arbitraria per non dividere per 0 internalmente
-          m.setAcceleration(100.0f);
+          m.setMaxSpeed(MIN_SPEED_THRESHOLD); 
+          m.setAcceleration(MIN_ACCEL_THRESHOLD);
       } else {
           float ratio = (float)dist / (float)maxDist;
-          m.setMaxSpeed(maxSpeed * ratio);
-          m.setAcceleration(maxAccel * ratio);
+          float speed = maxSpeed * ratio;
+          float accel = maxAccel * ratio;
+
+          // Se la velocità calcolata è troppo bassa, la alziamo al minimo decente.
+          // Questo significa che il motore finirà PRIMA degli altri (desincronizzazione),
+          // ma il movimento sarà fluido e silenzioso.
+          if (speed < MIN_SPEED_THRESHOLD) {
+              speed = MIN_SPEED_THRESHOLD;
+              // Scaliamo l'accelerazione in proporzione alla nuova velocità forzata o usiamo un fisso?
+              // Usiamo un fisso morbido o ricalcoliamo. 
+              // Se speed aumenta, accel dovrebbe aumentare per raggiungerla in tempi utili.
+              // Semplifichiamo: se speed è bassa force, usiamo accel bassa force.
+              accel = MIN_ACCEL_THRESHOLD; 
+          }
+
+          m.setMaxSpeed(speed);
+          m.setAcceleration(accel);
       }
   };
 
@@ -105,13 +125,13 @@ void startCoordinatedMove() {
 
   movingCoordinated = true;
   
-  // Reset flag completamento
+  // Reset flag completamento (semplice stato)
   motore1Completato = false;
   motore2Completato = false;
   motore3Completato = false;
   motore4Completato = false;
 
-  Serial.println(F("Start coordinated move..."));
+  Serial.println(F("Start coordinated move (optimized)..."));
 }
 
 void handleMotors() {

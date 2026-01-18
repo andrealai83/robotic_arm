@@ -21,8 +21,8 @@ double rapportoPlanetario = 14.2;
 
 float moltiplicaRapportoPlanetario = 28.0f;
 double passiPerGrado = 0.0;
-int maxSpeed = 6000;
-int maxAccel = 3000;
+int maxSpeed = 5000;
+int maxAccel = 2000;
 
 bool motorsEnabled = true;          
 const bool EN_ACTIVE_HIGH = true;  
