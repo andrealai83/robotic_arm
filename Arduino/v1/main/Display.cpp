@@ -72,3 +72,17 @@ void mostraMessaggio(const String& messaggio){
   // lcd.clear();
   aggiornaDisplay();
 }
+
+void mostraStatoEndstop(bool e1, bool e2, bool e3, bool e4){
+  lcd.setCursor(0, 0);
+  lcd.print("E1:");
+  lcd.print(e1 ? "ON " : "OFF");
+  lcd.print(" E2:");
+  lcd.print(e2 ? "ON " : "OFF");
+
+  lcd.setCursor(0, 1);
+  lcd.print("E3:");
+  lcd.print(e3 ? "ON " : "OFF");
+  lcd.print(" E4:");
+  lcd.print(e4 ? "ON " : "OFF");
+}

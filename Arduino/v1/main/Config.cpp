@@ -3,8 +3,8 @@
 // PIN motori
 int ENA4 = 13, DIR4 = 12, PUL4 = 11;
 int ENA1 = 10, DIR1 = 9,  PUL1 = 8;
-int ENA3 = 7,  DIR3 = 6,  PUL3 = 5;
-int ENA2 = 4,  DIR2 = 3,  PUL2 = 2;
+int ENA2 = 7,  DIR2 = 6,  PUL2 = 5;
+int ENA3 = 4,  DIR3 = 3,  PUL3 = 2;
 int ENAP = 19, DIRP = 21, PULP = 20;
 
 // Stato globale

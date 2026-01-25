@@ -71,6 +71,7 @@ void applyCommand(const Payload& p)
 }
 
 static float r1=0, r2=0, r3=0, r4=0;  
+static bool endstopTelemetryEnabled = false;
 
 void joystickVelocityUpdate() {
 
@@ -341,6 +342,8 @@ void processToken(const String &cmd)
 
   if (cmd == F("ENDSTOP_ENABLED_1")) { ENDSTOP_ENABLED = 1; return; }
   if (cmd == F("ENDSTOP_ENABLED_0")) { ENDSTOP_ENABLED = 0; return; }
+  if (cmd == F("TE:1")) { endstopTelemetryEnabled = true; return; }
+  if (cmd == F("TE:0")) { endstopTelemetryEnabled = false; return; }
 
 }
 
@@ -453,6 +456,28 @@ void checkEndStop() {
     return;
   }
   
+}
+
+void endstopTelemetryUpdate() {
+  if (!endstopTelemetryEnabled) return;
+
+  static unsigned long lastMs = 0;
+  const unsigned long intervalMs = 200;
+  unsigned long now = millis();
+  if (now - lastMs < intervalMs) return;
+  lastMs = now;
+
+  bool e1 = (digitalRead(ENDSTOP_1_PIN) == LOW);
+  bool e2 = (digitalRead(ENDSTOP_2_PIN) == LOW);
+  bool e3 = (digitalRead(ENDSTOP_3_PIN) == LOW);
+  bool e4 = (digitalRead(ENDSTOP_4_PIN) == LOW);
+
+  mostraStatoEndstop(e1, e2, e3, e4);
+  Serial.print(F("ENDSTOP "));
+  Serial.print(F("E1:")); Serial.print(e1 ? 1 : 0);
+  Serial.print(F(" E2:")); Serial.print(e2 ? 1 : 0);
+  Serial.print(F(" E3:")); Serial.print(e3 ? 1 : 0);
+  Serial.print(F(" E4:")); Serial.println(e4 ? 1 : 0);
 }
 
 int parseTarget(const String &comando)

@@ -5,6 +5,7 @@
 void handleSerial();
 void handleButtons();
 void checkEndStop();
+void endstopTelemetryUpdate();
 int  parseTarget(const String& comando);
 void setConfiguration(const String& config);
 

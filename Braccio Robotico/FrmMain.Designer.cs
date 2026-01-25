@@ -78,6 +78,11 @@
             this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
             this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
             this.button1 = new System.Windows.Forms.Button();
+            this.btnTestEndStop = new Krypton.Toolkit.KryptonButton();
+            this.END1 = new Krypton.Toolkit.KryptonButton();
+            this.END2 = new Krypton.Toolkit.KryptonButton();
+            this.END3 = new Krypton.Toolkit.KryptonButton();
+            this.END4 = new Krypton.Toolkit.KryptonButton();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -764,17 +769,98 @@
             // 
             this.button1.Location = new System.Drawing.Point(1036, 204);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(210, 35);
+            this.button1.Size = new System.Drawing.Size(63, 35);
             this.button1.TabIndex = 65;
             this.button1.Text = "button1";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // btnTestEndStop
+            // 
+            this.btnTestEndStop.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
+            this.btnTestEndStop.Location = new System.Drawing.Point(1095, 134);
+            this.btnTestEndStop.Name = "btnTestEndStop";
+            this.btnTestEndStop.Size = new System.Drawing.Size(151, 29);
+            this.btnTestEndStop.StateCommon.Back.Color1 = System.Drawing.Color.White;
+            this.btnTestEndStop.TabIndex = 66;
+            this.btnTestEndStop.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnTestEndStop.Values.Text = "Test EndStop";
+            this.btnTestEndStop.Click += new System.EventHandler(this.btnTestEndStop_Click);
+            // 
+            // END1
+            // 
+            this.END1.Location = new System.Drawing.Point(1118, 167);
+            this.END1.Name = "END1";
+            this.END1.Size = new System.Drawing.Size(40, 40);
+            this.END1.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
+            this.END1.StateCommon.Back.Color2 = System.Drawing.Color.Lime;
+            this.END1.StateCommon.Border.Rounding = 100F;
+            this.END1.StateCommon.Border.Width = 2;
+            this.END1.StateCommon.Content.ShortText.Color1 = System.Drawing.Color.White;
+            this.END1.StateCommon.Content.ShortText.Color2 = System.Drawing.Color.White;
+            this.END1.StateCommon.Content.ShortText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.END1.TabIndex = 67;
+            this.END1.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.END1.Values.Text = "1";
+            // 
+            // END2
+            // 
+            this.END2.Location = new System.Drawing.Point(1177, 167);
+            this.END2.Name = "END2";
+            this.END2.Size = new System.Drawing.Size(40, 40);
+            this.END2.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
+            this.END2.StateCommon.Back.Color2 = System.Drawing.Color.Lime;
+            this.END2.StateCommon.Border.Rounding = 100F;
+            this.END2.StateCommon.Border.Width = 2;
+            this.END2.StateCommon.Content.ShortText.Color1 = System.Drawing.Color.White;
+            this.END2.StateCommon.Content.ShortText.Color2 = System.Drawing.Color.White;
+            this.END2.StateCommon.Content.ShortText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.END2.TabIndex = 68;
+            this.END2.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.END2.Values.Text = "1";
+            // 
+            // END3
+            // 
+            this.END3.Location = new System.Drawing.Point(1118, 208);
+            this.END3.Name = "END3";
+            this.END3.Size = new System.Drawing.Size(40, 40);
+            this.END3.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
+            this.END3.StateCommon.Back.Color2 = System.Drawing.Color.Lime;
+            this.END3.StateCommon.Border.Rounding = 100F;
+            this.END3.StateCommon.Border.Width = 2;
+            this.END3.StateCommon.Content.ShortText.Color1 = System.Drawing.Color.White;
+            this.END3.StateCommon.Content.ShortText.Color2 = System.Drawing.Color.White;
+            this.END3.StateCommon.Content.ShortText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.END3.TabIndex = 69;
+            this.END3.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.END3.Values.Text = "1";
+            // 
+            // END4
+            // 
+            this.END4.Location = new System.Drawing.Point(1177, 208);
+            this.END4.Name = "END4";
+            this.END4.Size = new System.Drawing.Size(40, 40);
+            this.END4.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
+            this.END4.StateCommon.Back.Color2 = System.Drawing.Color.Lime;
+            this.END4.StateCommon.Border.Rounding = 100F;
+            this.END4.StateCommon.Border.Width = 2;
+            this.END4.StateCommon.Content.ShortText.Color1 = System.Drawing.Color.White;
+            this.END4.StateCommon.Content.ShortText.Color2 = System.Drawing.Color.White;
+            this.END4.StateCommon.Content.ShortText.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.END4.TabIndex = 70;
+            this.END4.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.END4.Values.Text = "1";
             // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(2132, 924);
+            this.Controls.Add(this.END4);
+            this.Controls.Add(this.END3);
+            this.Controls.Add(this.END2);
+            this.Controls.Add(this.END1);
+            this.Controls.Add(this.btnTestEndStop);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.kryptonButton2);
             this.Controls.Add(this.trackBarP);
@@ -892,6 +978,11 @@
         private Krypton.Toolkit.KryptonButton btnClearLogs;
         private System.Windows.Forms.CheckBox ckPlayLoop;
         private System.Windows.Forms.Button button1;
+        private Krypton.Toolkit.KryptonButton btnTestEndStop;
+        private Krypton.Toolkit.KryptonButton END1;
+        private Krypton.Toolkit.KryptonButton END2;
+        private Krypton.Toolkit.KryptonButton END3;
+        private Krypton.Toolkit.KryptonButton END4;
     }
 }
 

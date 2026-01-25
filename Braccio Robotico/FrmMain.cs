@@ -25,6 +25,7 @@ namespace Braccio_Robotico
         private string MagState = "C:0";
         private string MotorState = "ENA:1";
         private bool EndStopEnabled = true;
+        private bool TestEndStopEnabled = false;
         private bool Running = false;
         private bool Stream = false;
         private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
@@ -43,6 +44,63 @@ namespace Braccio_Robotico
             {
                 listViewLog.Invoke(new Action(() => LogMessage(message)));
                 return;
+            }
+
+            if (message.StartsWith("ENDSTOP"))
+            {
+                string[] sliptString = message.Substring(6).Trim().Split(':');
+
+                if (sliptString.Length < 4)
+                    return;
+
+                string valueEND1 = sliptString[1].Substring(0,1).Trim();
+                string valueEND2 = sliptString[2].Substring(0, 1).Trim();
+                string valueEND3 = sliptString[3].Substring(0, 1).Trim();
+                string valueEND4 = sliptString[4].Substring(0, 1).Trim();
+
+                if (valueEND1 == "0")
+                {
+                    END1.StateCommon.Back.Color1 = Color.Red;
+                    END1.StateCommon.Back.Color2 = Color.Red;
+                }
+                else
+                {
+                    END1.StateCommon.Back.Color1 = Color.Lime;
+                    END1.StateCommon.Back.Color2 = Color.Lime;
+                }
+
+                if (valueEND2 == "0")
+                {
+                    END2.StateCommon.Back.Color1 = Color.Red;
+                    END2.StateCommon.Back.Color2 = Color.Red;
+                }
+                else
+                {
+                    END2.StateCommon.Back.Color1 = Color.Lime;
+                    END2.StateCommon.Back.Color2 = Color.Lime;
+                }
+
+                if (valueEND3 == "0")
+                {
+                    END3.StateCommon.Back.Color1 = Color.Red;
+                    END3.StateCommon.Back.Color2 = Color.Red;
+                }
+                else
+                {
+                    END3.StateCommon.Back.Color1 = Color.Lime;
+                    END3.StateCommon.Back.Color2 = Color.Lime;
+                }
+
+                if (valueEND4 == "0")
+                {
+                    END4.StateCommon.Back.Color1 = Color.Red;
+                    END4.StateCommon.Back.Color2 = Color.Red;
+                }
+                else
+                {
+                    END4.StateCommon.Back.Color1 = Color.Lime;
+                    END4.StateCommon.Back.Color2 = Color.Lime;
+                }
             }
 
             if (message.StartsWith("EN_DEG"))
@@ -693,6 +751,12 @@ namespace Braccio_Robotico
             string MotorStream = pinza ? "GRIP:120" : "GRIP:0";
             serialManager.Write(MotorStream);
             pinza = !pinza;
+        }
+
+        private void btnTestEndStop_Click(object sender, EventArgs e)
+        {
+            TestEndStopEnabled = !TestEndStopEnabled;
+            serialManager.Write("TE:" + (TestEndStopEnabled ? "1" : "0"));
         }
     }
 }
