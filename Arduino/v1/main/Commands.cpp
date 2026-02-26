@@ -21,6 +21,11 @@ static long LIM_MIN_M2 = 0, LIM_MAX_M2 = 360;
 static long LIM_MIN_M3 = 0, LIM_MAX_M3 = 360;
 static long LIM_MIN_M4 = 0, LIM_MAX_M4 = 360;
 
+// Coupling: M4 follows M2 (ratio/sign configurable)
+static const bool  COUPLE_M4_TO_M2 = true;
+static const float COUPLE_M4_RATIO  = 1.0f;
+static const int   COUPLE_M4_SIGN   = 1; // set -1 only if you need logical inversion too
+
 // fail-safe: se non riceviamo pacchetti per X ms, stop ai delta
 static const unsigned long RF_TIMEOUT_MS = 500;
 
@@ -47,6 +52,21 @@ static inline long clampL(long v, long lo, long hi){
 
 static inline int16_t withDeadband(int16_t v){
   return (abs(v) <= VEL_DEADBAND) ? 0 : v;
+}
+
+static inline bool syncM4FromM2(bool moveNow) {
+  if (!COUPLE_M4_TO_M2) return false;
+
+  long desiredM4 = lroundf((float)target2 * COUPLE_M4_RATIO * (float)COUPLE_M4_SIGN);
+  desiredM4 = clampL(desiredM4, LIM_MIN_M4, LIM_MAX_M4);
+  if (desiredM4 == target4) return false;
+
+  target4 = desiredM4;
+  if (moveNow) {
+    setTarget(motore4, (int)target4);
+    motore4Completato = false;
+  }
+  return true;
 }
 
 // === ARRIVO PACCHETTO RF ===
@@ -113,7 +133,10 @@ void joystickVelocityUpdate() {
   if (s1) { long nt = clampL(target1 + s1, LIM_MIN_M1, LIM_MAX_M1);
             if (nt != target1) { setTarget(motore1, nt); motore1Completato=false; target1=nt; changed=true; } }
   if (s2) { long nt = clampL(target2 + s2, LIM_MIN_M2, LIM_MAX_M2);
-            if (nt != target2) { setTarget(motore2, nt); motore2Completato=false; target2=nt; changed=true; } }
+            if (nt != target2) {
+              setTarget(motore2, nt); motore2Completato=false; target2=nt; changed=true;
+              if (syncM4FromM2(true)) changed = true;
+            } }
   if (s3) { long nt = clampL(target3 + s3, LIM_MIN_M3, LIM_MAX_M3);
             if (nt != target3) { setTarget(motore3, nt); motore3Completato=false; target3=nt; changed=true; } }
   if (s4) { long nt = clampL(target4 + s4, LIM_MIN_M4, LIM_MAX_M4);
@@ -225,6 +248,13 @@ void processToken(const String &cmd)
     target2 = v;
     setTarget(motore2, v);
     motore2Completato = false;
+    if (COUPLE_M4_TO_M2) {
+      long desiredM4 = lroundf((float)target2 * COUPLE_M4_RATIO * (float)COUPLE_M4_SIGN);
+      desiredM4 = clampL(desiredM4, LIM_MIN_M4, LIM_MAX_M4);
+      target4 = desiredM4;
+      setTarget(motore4, (int)target4);
+      motore4Completato = false;
+    }
     return;
   }
   if (cmd.startsWith(F("M3:"))) {
@@ -254,7 +284,7 @@ void processToken(const String &cmd)
     // Prima di eseguire, sincronizza i target con le posizioni correnti
     // Questo previene movimenti indesiderati di assi non comandati esplicitamente
     // (es. se fai solo M1:90, M2/M3/M4 non devono muoversi)
-        
+    syncM4FromM2(false);
     startCoordinatedMove();
     mostraMessaggio("EXEC");
     return;
@@ -300,6 +330,7 @@ void processToken(const String &cmd)
     homingMotor(motore2, ENDSTOP_2_PIN, 1);
     encoderReset(2);  // resetta encoder dopo homing
     target2 = 0;
+    syncM4FromM2(false);
     Serial.println(F("HOMING COMPLETATO"));
     aggiornaDisplay();
     return;

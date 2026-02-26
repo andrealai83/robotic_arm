@@ -3,12 +3,20 @@
   "WorkspaceRootPath": "E:\\Repos\\robotic_arm\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|e:\\repos\\robotic_arm\\braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|E:\\Repos\\robotic_arm\\braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|solutionrelative:braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|E:\\Repos\\robotic_arm\\braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|solutionrelative:braccio robotico\\frmmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5F09913A-416A-4747-82F9-33396F8640CA}|Braccio3DViewer\\Braccio3DViewer.csproj|e:\\repos\\robotic_arm\\braccio3dviewer\\braccio3dwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5F09913A-416A-4747-82F9-33396F8640CA}|Braccio3DViewer\\Braccio3DViewer.csproj|solutionrelative:braccio3dviewer\\braccio3dwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5F09913A-416A-4747-82F9-33396F8640CA}|Braccio3DViewer\\Braccio3DViewer.csproj|E:\\Repos\\robotic_arm\\braccio3dviewer\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5F09913A-416A-4747-82F9-33396F8640CA}|Braccio3DViewer\\Braccio3DViewer.csproj|solutionrelative:braccio3dviewer\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B52E68BA-1E46-4B00-9FE1-A83854DEC45D}|Braccio Robotico\\Braccio Robotico.csproj|E:\\Repos\\robotic_arm\\braccio robotico\\frmmanageposizioni.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -46,19 +54,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "KinematicsHelper.cs",
-              "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\KinematicsHelper.cs",
-              "RelativeDocumentMoniker": "Braccio Robotico\\Helper\\KinematicsHelper.cs",
-              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\KinematicsHelper.cs",
-              "RelativeToolTip": "Braccio Robotico\\Helper\\KinematicsHelper.cs",
-              "ViewState": "AgIAAJsAAAAAAAAAAAAvwLIAAAAoAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "Braccio3DWindow.xaml.cs",
+              "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio3DViewer\\Braccio3DWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Braccio3DViewer\\Braccio3DWindow.xaml.cs",
+              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio3DViewer\\Braccio3DWindow.xaml.cs",
+              "RelativeToolTip": "Braccio3DViewer\\Braccio3DWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-17T13:11:13.098Z"
+              "WhenOpened": "2026-02-21T11:04:54.99Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "FrmManagePosizioni.cs",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmManagePosizioni.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\FrmManagePosizioni.cs",
@@ -70,7 +79,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "Movimento.cs",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Models\\Movimento.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\Models\\Movimento.cs",
@@ -86,16 +95,16 @@
               "Title": "FrmMain.cs",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\FrmMain.cs",
-              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs",
-              "RelativeToolTip": "Braccio Robotico\\FrmMain.cs",
-              "ViewState": "AgIAAMcCAAAAAAAAAAAcwO4CAAAxAAAAAAAAAA==",
+              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs*",
+              "RelativeToolTip": "Braccio Robotico\\FrmMain.cs*",
+              "ViewState": "AgIAACsBAAAAAAAAAAAcwEoBAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-25T09:28:57.826Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "PosizioneStorage.cs",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\PosizioneStorage.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\Helper\\PosizioneStorage.cs",
@@ -107,7 +116,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "TrajectoryInterpolator.cs",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\TrajectoryInterpolator.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\Helper\\TrajectoryInterpolator.cs",
@@ -123,10 +132,35 @@
               "Title": "FrmMain.cs [Progettazione]",
               "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs",
               "RelativeDocumentMoniker": "Braccio Robotico\\FrmMain.cs",
-              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs [Progettazione]",
-              "RelativeToolTip": "Braccio Robotico\\FrmMain.cs [Progettazione]",
+              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\FrmMain.cs [Progettazione]*",
+              "RelativeToolTip": "Braccio Robotico\\FrmMain.cs [Progettazione]*",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-25T09:28:55.959Z"
+              "WhenOpened": "2025-12-25T09:28:55.959Z",
+              "EditorCaption": " [Progettazione]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "KinematicsHelper.cs",
+              "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\KinematicsHelper.cs",
+              "RelativeDocumentMoniker": "Braccio Robotico\\Helper\\KinematicsHelper.cs",
+              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio Robotico\\Helper\\KinematicsHelper.cs",
+              "RelativeToolTip": "Braccio Robotico\\Helper\\KinematicsHelper.cs",
+              "ViewState": "AgIAAJsAAAAAAAAAAAAvwLIAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-17T13:11:13.098Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "E:\\Repos\\robotic_arm\\Braccio3DViewer\\App.xaml.cs",
+              "RelativeDocumentMoniker": "Braccio3DViewer\\App.xaml.cs",
+              "ToolTip": "E:\\Repos\\robotic_arm\\Braccio3DViewer\\App.xaml.cs",
+              "RelativeToolTip": "Braccio3DViewer\\App.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-21T11:05:39.44Z"
             }
           ]
         }

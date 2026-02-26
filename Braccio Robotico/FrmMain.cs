@@ -319,13 +319,16 @@ namespace Braccio_Robotico
 
         private void btnGoAll_Click(object sender, EventArgs e)
         {
-            string command = $"M1:{trackBar1.Value};" +
-                     $"M2:{trackBar2.Value};" +
-                     $"M3:{trackBar3.Value};" +
-                     $"M4:{trackBar4.Value};" +
-                     $"MP:{trackBarP.Value};" +
-                     $"{MagState};" +
-                     "EXEC\n";
+            //string command = $"M1:{trackBar1.Value};" +
+            //         $"M2:{trackBar2.Value};" +
+            //         $"M3:{trackBar3.Value};" +
+            //         $"M4:{trackBar4.Value};" +
+            //         $"MP:{trackBarP.Value};" +
+            //         $"{MagState};" +
+            //         "EXEC\n";
+
+            string command = $"M2:{trackBar2.Value};"   +
+                   "EXEC\n";
 
             serialManager.Write(command);
             Running = true;

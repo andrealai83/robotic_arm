@@ -13,7 +13,7 @@ bool motore1Completato = true;
 bool motore2Completato = true;
 bool motore3Completato = true;
 bool motore4Completato = true;
- 
+
 // Flag globale per indicare se siamo in movimento coordinato
 bool movingCoordinated = false;
 
@@ -22,20 +22,22 @@ bool movingCoordinated = false;
 // invertRotation: true = Inverte i pin DIR (Cambia il senso di rotazione per TUTTI i movimenti)
 // homingDirectionSign: 1 = Homing verso Positivo, -1 = Homing verso Negativo. (SCEGLIERE SEPARATAMENTE)
 MotorConfig motorConfigs[4] = {
-    { false, -1 }, // Motore 1: Rotazione Normale, Homing verso Negativo
-    { true,  -1 }, // Motore 2: Rotazione Invertita, Homing verso Positivo
-    { true, -1 }, // Motore 3: Rotazione Normale, Homing verso Negativo
-    { true, -1 }  // Motore 4: Rotazione Normale, Homing verso Negativo
+    {false, -1}, // Motore 1: Rotazione Normale, Homing verso Negativo
+    {true, -1},  // Motore 2: Rotazione Invertita, Homing verso Positivo
+    {true, -1},  // Motore 3: Rotazione Normale, Homing verso Negativo
+    {false, -1}   // Motore 4: Rotazione Normale, Homing verso Negativo
 };
 
-void setupMotors(){
+void setupMotors()
+{
   setupMotor(motore1, ENA1, 0);
   setupMotor(motore2, ENA2, 1);
   setupMotor(motore3, ENA3, 2);
   setupMotor(motore4, ENA4, 3);
 }
 
-void moveAllToDegrees(int g1,int g2,int g3,int g4){
+void moveAllToDegrees(int g1, int g2, int g3, int g4)
+{
   // Funzione legacy o di test rapido
   // Impostiamo i target globali e chiamiamo la nuova funzione
   target1 = g1;
@@ -47,7 +49,8 @@ void moveAllToDegrees(int g1,int g2,int g3,int g4){
 
 // Esegue movimento coordinato scalando le velocità
 // Esegue movimento coordinato scalando le velocità
-void startCoordinatedMove() {
+void startCoordinatedMove()
+{
   // 1. Calcola posizione attuale e target in passi
   long current1 = motore1.currentPosition();
   long current2 = motore2.currentPosition();
@@ -67,11 +70,15 @@ void startCoordinatedMove() {
 
   // 3. Trova la distanza massima
   long maxDist = dist1;
-  if (dist2 > maxDist) maxDist = dist2;
-  if (dist3 > maxDist) maxDist = dist3;
-  if (dist4 > maxDist) maxDist = dist4;
+  if (dist2 > maxDist)
+    maxDist = dist2;
+  if (dist3 > maxDist)
+    maxDist = dist3;
+  if (dist4 > maxDist)
+    maxDist = dist4;
 
-  if (maxDist == 0) {
+  if (maxDist == 0)
+  {
     // Nessun movimento necessario
     movingCoordinated = false;
     Serial.println("ready");
@@ -82,34 +89,39 @@ void startCoordinatedMove() {
   // Il motore che deve fare più strada andrà a velocità piena (maxSpeed).
   // Gli altri andranno in proporzione, MA con un limite minimo di velocità
   // per evitare risonanze e rumori (scattosità).
-  
+
   const float MIN_SPEED_THRESHOLD = 200.0f; // Velocità minima (step/sec) sotto la quale non scendiamo
-  const float MIN_ACCEL_THRESHOLD = 100.0f; 
+  const float MIN_ACCEL_THRESHOLD = 100.0f;
 
-  auto setupAxis = [&](AccelStepper& m, long dist) {
-      if (dist == 0) {
-          m.setMaxSpeed(MIN_SPEED_THRESHOLD); 
-          m.setAcceleration(MIN_ACCEL_THRESHOLD);
-      } else {
-          float ratio = (float)dist / (float)maxDist;
-          float speed = maxSpeed * ratio;
-          float accel = maxAccel * ratio;
+  auto setupAxis = [&](AccelStepper &m, long dist)
+  {
+    if (dist == 0)
+    {
+      m.setMaxSpeed(MIN_SPEED_THRESHOLD);
+      m.setAcceleration(MIN_ACCEL_THRESHOLD);
+    }
+    else
+    {
+      float ratio = (float)dist / (float)maxDist;
+      float speed = maxSpeed * ratio;
+      float accel = maxAccel * ratio;
 
-          // Se la velocità calcolata è troppo bassa, la alziamo al minimo decente.
-          // Questo significa che il motore finirà PRIMA degli altri (desincronizzazione),
-          // ma il movimento sarà fluido e silenzioso.
-          if (speed < MIN_SPEED_THRESHOLD) {
-              speed = MIN_SPEED_THRESHOLD;
-              // Scaliamo l'accelerazione in proporzione alla nuova velocità forzata o usiamo un fisso?
-              // Usiamo un fisso morbido o ricalcoliamo. 
-              // Se speed aumenta, accel dovrebbe aumentare per raggiungerla in tempi utili.
-              // Semplifichiamo: se speed è bassa force, usiamo accel bassa force.
-              accel = MIN_ACCEL_THRESHOLD; 
-          }
-
-          m.setMaxSpeed(speed);
-          m.setAcceleration(accel);
+      // Se la velocità calcolata è troppo bassa, la alziamo al minimo decente.
+      // Questo significa che il motore finirà PRIMA degli altri (desincronizzazione),
+      // ma il movimento sarà fluido e silenzioso.
+      if (speed < MIN_SPEED_THRESHOLD)
+      {
+        speed = MIN_SPEED_THRESHOLD;
+        // Scaliamo l'accelerazione in proporzione alla nuova velocità forzata o usiamo un fisso?
+        // Usiamo un fisso morbido o ricalcoliamo.
+        // Se speed aumenta, accel dovrebbe aumentare per raggiungerla in tempi utili.
+        // Semplifichiamo: se speed è bassa force, usiamo accel bassa force.
+        accel = MIN_ACCEL_THRESHOLD;
       }
+
+      m.setMaxSpeed(speed);
+      m.setAcceleration(accel);
+    }
   };
 
   setupAxis(motore1, dist1);
@@ -124,7 +136,7 @@ void startCoordinatedMove() {
   motore4.moveTo(targetPos4);
 
   movingCoordinated = true;
-  
+
   // Reset flag completamento (semplice stato)
   motore1Completato = false;
   motore2Completato = false;
@@ -134,9 +146,11 @@ void startCoordinatedMove() {
   Serial.println(F("Start coordinated move (optimized)..."));
 }
 
-void handleMotors() {
-  
-  if (movingCoordinated) {
+void handleMotors()
+{
+
+  if (movingCoordinated)
+  {
     // Esegui run() per tutti i motori in un loop BLOCCANTE
     // Questo evita la latenza del loop() principale (Serial, LCD, ecc.)
     // rendendo il movimento fluido come l'homing.
@@ -144,57 +158,86 @@ void handleMotors() {
     bool emergencyStop = false;
 
     // Loop dedicato "tight"
-    while (true) {
-        bool running = false;
+    while (true)
+    {
+      bool running = false;
 
-        // 1. Step motori (priorità massima)
-        if (motore1.distanceToGo() != 0) { motore1.run(); running = true; }
-        if (motore2.distanceToGo() != 0) { motore2.run(); running = true; }
-        if (motore3.distanceToGo() != 0) { motore3.run(); running = true; }
-        if (motore4.distanceToGo() != 0) { motore4.run(); running = true; }
+      // 1. Step motori (priorità massima)
+      if (motore1.distanceToGo() != 0)
+      {
+        motore1.run();
+        running = true;
+      }
+      if (motore2.distanceToGo() != 0)
+      {
+        motore2.run();
+        running = true;
+      }
+      if (motore3.distanceToGo() != 0)
+      {
+        motore3.run();
+        running = true;
+      }
+      if (motore4.distanceToGo() != 0)
+      {
+        motore4.run();
+        running = true;
+      }
 
-        // 2. Controllo Stop Button (safety check rapido)
-        // Usiamo digitalRead diretto per non perdere tempo
-        if (digitalRead(BTN_STOP_PIN) == LOW) {
-            emergencyStop = true;
-            break; 
-        }
+      // 2. Controllo Stop Button (safety check rapido)
+      // Usiamo digitalRead diretto per non perdere tempo
+      if (digitalRead(BTN_STOP_PIN) == LOW)
+      {
+        emergencyStop = true;
+        break;
+      }
 
-        // 3. Se nessun motore si muove, abbiamo finito
-        if (!running) {
-            break; 
-        }
+      // 3. Se nessun motore si muove, abbiamo finito
+      if (!running)
+      {
+        break;
+      }
     }
 
-    if (emergencyStop) {
-        // Stop immediato
-        motore1.stop(); motore1.setCurrentPosition(motore1.currentPosition());
-        motore2.stop(); motore2.setCurrentPosition(motore2.currentPosition());
-        motore3.stop(); motore3.setCurrentPosition(motore3.currentPosition());
-        motore4.stop(); motore4.setCurrentPosition(motore4.currentPosition());
-        
-        // Reset flag
-        motore1Completato = true;
-        motore2Completato = true;
-        motore3Completato = true;
-        motore4Completato = true;
-        eseguiMovimento = false;
-        
-        Serial.println(F("STOP Button Detected during move!"));
-        // mostraMessaggio("STOP EMERGENCY"); // Opzionale, richiede Display.h
+    if (emergencyStop)
+    {
+      // Stop immediato
+      motore1.stop();
+      motore1.setCurrentPosition(motore1.currentPosition());
+      motore2.stop();
+      motore2.setCurrentPosition(motore2.currentPosition());
+      motore3.stop();
+      motore3.setCurrentPosition(motore3.currentPosition());
+      motore4.stop();
+      motore4.setCurrentPosition(motore4.currentPosition());
+
+      // Reset flag
+      motore1Completato = true;
+      motore2Completato = true;
+      motore3Completato = true;
+      motore4Completato = true;
+      eseguiMovimento = false;
+
+      Serial.println(F("STOP Button Detected during move!"));
+      // mostraMessaggio("STOP EMERGENCY"); // Opzionale, richiede Display.h
     }
 
     movingCoordinated = false;
-      
+
     // Ripristina velocità originali
-    motore1.setMaxSpeed(maxSpeed); motore1.setAcceleration(maxAccel);
-    motore2.setMaxSpeed(maxSpeed); motore2.setAcceleration(maxAccel);
-    motore3.setMaxSpeed(maxSpeed); motore3.setAcceleration(maxAccel);
-    motore4.setMaxSpeed(maxSpeed); motore4.setAcceleration(maxAccel);
+    motore1.setMaxSpeed(maxSpeed);
+    motore1.setAcceleration(maxAccel);
+    motore2.setMaxSpeed(maxSpeed);
+    motore2.setAcceleration(maxAccel);
+    motore3.setMaxSpeed(maxSpeed);
+    motore3.setAcceleration(maxAccel);
+    motore4.setMaxSpeed(maxSpeed);
+    motore4.setAcceleration(maxAccel);
 
     Serial.println("ready");
-
-  } else {
+  }
+  else
+  {
     // Modalità manuale indipendente (non usata per movimenti lunghi coord)
     checkMotor(motore1, motore1Completato, ENDSTOP_1_PIN);
     checkMotor(motore2, motore2Completato, ENDSTOP_2_PIN);
@@ -203,21 +246,24 @@ void handleMotors() {
   }
 }
 
-void setupMotor(AccelStepper& motore, int pinENA, int motorIndex) {
+void setupMotor(AccelStepper &motore, int pinENA, int motorIndex)
+{
   pinMode(pinENA, OUTPUT);
   setEnableAll(true);
-  
+
   // Applica inversione se configurata
-  if (motorConfigs[motorIndex].invertRotation) {
-      motore.setPinsInverted(true, false, false);
+  if (motorConfigs[motorIndex].invertRotation)
+  {
+    motore.setPinsInverted(true, false, false);
   }
 
   motore.setMaxSpeed(maxSpeed);
   motore.setAcceleration(maxAccel);
-  motore.setMinPulseWidth(5); 
+  motore.setMinPulseWidth(5);
 }
 
-void setEnableAll(bool on) {
+void setEnableAll(bool on)
+{
   bool level = EN_ACTIVE_HIGH ? (on ? HIGH : LOW) : (on ? LOW : HIGH);
   digitalWrite(ENA1, level);
   digitalWrite(ENA2, level);
@@ -226,38 +272,45 @@ void setEnableAll(bool on) {
 
   encoderStreamOn = !on;
 
-  if (on) {
+  if (on)
+  {
     // i motori si stanno disabilitando → non fare nulla
-  } else { 
+  }
+  else
+  {
     // Sincronizza posizioni motori con encoder
-    motore1.setCurrentPosition((long)(jointDeg1 * passiPerGrado)); 
-    motore2.setCurrentPosition((long)(jointDeg2 * passiPerGrado)); 
-    motore3.setCurrentPosition((long)(jointDeg3 * passiPerGrado)); 
-    motore4.setCurrentPosition((long)(jointDeg4 * passiPerGrado)); 
+    motore1.setCurrentPosition((long)(jointDeg1 * passiPerGrado));
+    motore2.setCurrentPosition((long)(jointDeg2 * passiPerGrado));
+    motore3.setCurrentPosition((long)(jointDeg3 * passiPerGrado));
+    motore4.setCurrentPosition((long)(jointDeg4 * passiPerGrado));
   }
 }
 
-
-void setTarget(AccelStepper& motore, int targetGradi) {
-  if (targetGradi < -360 || targetGradi > 360) {
+void setTarget(AccelStepper &motore, int targetGradi)
+{
+  if (targetGradi < -360 || targetGradi > 360)
+  {
     Serial.println(F("Errore: target fuori limite (-360..360°)"));
     return;
   }
   long targetPassi = (long)(targetGradi * passiPerGrado);
   motore.moveTo(targetPassi);
-  
-  static unsigned long last=0;
-  if (millis()-last>120) { 
-    last=millis(); 
-    Serial.print(F("Impostato target passi: ")); 
-    Serial.println(targetPassi); 
-  }
 
+  static unsigned long last = 0;
+  if (millis() - last > 120)
+  {
+    last = millis();
+    Serial.print(F("Impostato target passi: "));
+    Serial.println(targetPassi);
+  }
 }
 
-void checkMotor(AccelStepper& motore, bool& completato, int endstopPin) {
-  if (!completato) {
-    if (ENDSTOP_ENABLED == 1 && digitalRead(endstopPin) == LOW) {
+void checkMotor(AccelStepper &motore, bool &completato, int endstopPin)
+{
+  if (!completato)
+  {
+    if (ENDSTOP_ENABLED == 1 && digitalRead(endstopPin) == LOW)
+    {
       motore.stop();
       motore.setCurrentPosition(0);
       completato = true;
@@ -268,59 +321,89 @@ void checkMotor(AccelStepper& motore, bool& completato, int endstopPin) {
       long passiBackoff = (long)(gradiBackoff * passiPerGrado);
       Serial.println(F("Rilascio finecorsa..."));
       motore.moveTo(passiBackoff);
-      while (motore.distanceToGo() != 0) motore.run();
+      while (motore.distanceToGo() != 0)
+        motore.run();
       motore.setCurrentPosition(0);
       Serial.println(F("Backoff completato"));
       return;
     }
 
-    motore.run(); 
+    motore.run();
 
-    if (motore.distanceToGo() == 0) {
+    if (motore.distanceToGo() == 0)
+    {
       completato = true;
     }
   }
 }
 
-void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
-  if (ENDSTOP_ENABLED == 0) {
+void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
+{
+  if (ENDSTOP_ENABLED == 0)
+  {
     Serial.println(F("Endstop disabilitato: homing saltato."));
     mostraMessaggio("Homing disabilitato");
     delay(1000);
     return;
   }
 
-  int baseHomingSpeed = 1000; //maxSpeed;
-  
+  int baseHomingSpeed = (motorIndex <= 1) ? 700 : 1000; // M1/M2 piu' dolci
+
   // Calcola velocità effettiva basata sulla direzione configurata
   // Se homingDir è -1 (standard), speed sarà -2000
   // Se homingDir è 1 (invertito), speed sarà 2000
-  int velocitaHoming = baseHomingSpeed * motorConfigs[motorIndex].homingDirectionSign;
+  const int speedSign = motorConfigs[motorIndex].homingDirectionSign;
+  int velocitaHoming = baseHomingSpeed * speedSign;
 
   mostraMessaggio("Homing in corso...");
+
+  Serial.println("Homing motore " + String(motorIndex) + " endstopPin: " + String(endstopPin));
+
   long prevMaxSpeed = (long)motore.maxSpeed();
   long prevAccel = (long)motore.acceleration();
 
   motore.enableOutputs();
   motore.setMaxSpeed(abs(velocitaHoming));
   motore.setAcceleration(500);
-  motore.setSpeed(velocitaHoming);
+  
+  auto seekEndstop = [&](int speed, unsigned long timeoutMs) -> bool {
+    motore.setSpeed(speed);
+    unsigned long startTime = millis();
+    while (digitalRead(endstopPin) == HIGH && (millis() - startTime) < timeoutMs) {
+      motore.runSpeed();
+    }
+    if (digitalRead(endstopPin) == LOW) {
+      delay(3);
+      return (digitalRead(endstopPin) == LOW);
+    }
+    return false;
+  };
 
-  unsigned long startTime = millis();
-  while (digitalRead(endstopPin) == HIGH && millis() - startTime < 10000) {
-    motore.runSpeed();
+  Serial.println(digitalRead(endstopPin) == LOW ? "Endstop già attivo all'inizio dell'homing!" : "Endstop non attivo, procedo con l'homing...");
+
+  const unsigned long HOMING_TIMEOUT_MS = 15000;
+  bool reachedEndstop = seekEndstop(velocitaHoming, HOMING_TIMEOUT_MS);
+
+  if (!reachedEndstop)
+  {
+    Serial.println(F("Finecorsa non raggiunto entro timeout"));
+    motore.setMaxSpeed(prevMaxSpeed);
+    motore.setAcceleration(prevAccel);
+    return;
   }
-  if (digitalRead(endstopPin) == HIGH) {
-    Serial.println(F("⚠️ Finecorsa non raggiunto entro timeout!"));
-  }
+
   motore.stop();
   motore.setCurrentPosition(0);
+
   Serial.println(F("Homing completato"));
 
   int gradiBackoff = 5;
   long passiBackoff = (long)(gradiBackoff * passiPerGrado);
-  //motore.moveTo(passiBackoff);
-  while (motore.distanceToGo() != 0) motore.run();
+  long dirBackoff = (long)(-motorConfigs[motorIndex].homingDirectionSign * passiBackoff);
+  motore.moveTo(motore.currentPosition() + dirBackoff);
+
+  while (motore.distanceToGo() != 0)
+    motore.run();
   motore.setCurrentPosition(0);
   Serial.println(F("Backoff completato"));
 
@@ -328,22 +411,26 @@ void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex) {
   motore.setAcceleration(prevAccel);
 
   // Imposta zero per tutti gli encoder attivi
-  encoderZero(1);  // Motor 1
-  encoderZero(2);  // Motor 2
-  encoderZero(3);  // Motor 3
-  encoderZero(4);  // Motor 4
-  encoderZero(5);  // Motor 5
+  encoderZero(1); // Motor 1
+  encoderZero(2); // Motor 2
+  encoderZero(3); // Motor 3
+  encoderZero(4); // Motor 4
+  encoderZero(5); // Motor 5
 
   mostraMessaggio("Pronto");
 }
 
-void setupGripper() {
+void setupGripper()
+{
   gripper.attach(GRIPPER_PIN);
   gripper.write(90); // Default position
 }
 
-void setGripperAngle(int angle) {
-  if (angle < 0) angle = 0;
-  if (angle > 180) angle = 180;
+void setGripperAngle(int angle)
+{
+  if (angle < 0)
+    angle = 0;
+  if (angle > 180)
+    angle = 180;
   gripper.write(angle);
 }
