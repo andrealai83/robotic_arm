@@ -28,12 +28,14 @@ namespace Braccio_Robotico
         private bool TestEndStopEnabled = false;
         private bool Running = false;
         private bool Stream = false;
+        private bool deviceReady = false;
         private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
         public FrmMain()
         {
             InitializeComponent(); 
             serialManager = new SerialManager();
-            serialManager.OnDataReceived += LogMessage; 
+            serialManager.OnDataReceived += LogMessage;
+            serialManager.OnDataSent += LogMessage;
             RobotConfig.InizializzaDatabaseSeNecessario();
             RobotConfig.CaricaConfigurazioni(); 
         }
@@ -155,10 +157,11 @@ namespace Braccio_Robotico
             //AggiornaTrackbarDaPosizione(message);
         }
 
-        private void btnConnect_Click(object sender, EventArgs e)
+        private async void btnConnect_Click(object sender, EventArgs e)
         {
             serialManager = new SerialManager(comboBoxComPorts.Text);
             serialManager.OnDataReceived += LogMessage;
+            serialManager.OnDataSent += LogMessage;
             serialManager.Open();
               
              viewer3D.UpdateAngles(
@@ -171,14 +174,21 @@ namespace Braccio_Robotico
             if (serialManager.Port.IsOpen)
             { 
                 btnConnect.Enabled = false;
-                btnDisconnect.Enabled = true; 
-                RobotConfig.SendConfiguration(serialManager.Port);
+                btnDisconnect.Enabled = true;
+
+                bool initialized = await InitializeDeviceAsync();
+                deviceReady = initialized;
+                if (!initialized)
+                {
+                    MessageBox.Show("Inizializzazione seriale non completata (timeout su 'Sistema pronto.' o su 'ok').", "Seriale", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
         {
             serialManager.Close();
+            deviceReady = false;
             btnConnect.Enabled = true;
             btnDisconnect.Enabled = false;
         }
@@ -238,7 +248,7 @@ namespace Braccio_Robotico
                 try
                 {
                     string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.GRIP}\nRUN\n";
-                    serialManager.Port.Write(comando);
+                    serialManager.WriteRaw(comando);
                     history.Add(movi);
 
                     viewer3D.UpdateAngles(
@@ -271,43 +281,86 @@ namespace Braccio_Robotico
          
         private Task<bool> WaitForResponse(string attesa, int timeout)
         {
-            return Task.Run(() =>
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action<string> handler = null;
+            var cts = new CancellationTokenSource(timeout);
+
+            handler = (msg) =>
             {
-                serialManager.DisableDataReceived();
+                if (msg == attesa)
+                    tcs.TrySetResult(true);
+            };
 
-                DateTime startTime = DateTime.Now;
-                while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
+            serialManager.OnDataReceived += handler;
+            cts.Token.Register(() => tcs.TrySetResult(false));
+
+            return tcs.Task.ContinueWith(t =>
+            {
+                serialManager.OnDataReceived -= handler;
+                cts.Dispose();
+                return t.Result;
+            }, TaskScheduler.Default);
+        }
+
+        private async Task<bool> InitializeDeviceAsync()
+        {
+            // Dopo open la board può essere ancora nel bootloader.
+            await Task.Delay(1500);
+            try
+            {
+                serialManager.Port.DiscardInBuffer();
+                serialManager.Port.DiscardOutBuffer();
+            }
+            catch { }
+
+            // Dopo apertura porta Arduino Mega può resettarsi: aspettiamo banner di avvio.
+            bool bootOk = await WaitForResponse("Sistema pronto.", 8000);
+            if (!bootOk)
+                LogMessage("INFO: 'Sistema pronto.' non ricevuto, continuo con configurazione.");
+
+            foreach (string cfg in RobotConfig.BuildConfigurationCommands())
+            {
+                bool ok = false;
+                for (int attempt = 1; attempt <= 3 && !ok; attempt++)
                 {
-                    try
+                    ok = await SendAndWaitOkAsync(cfg, 4000);
+                    if (!ok)
                     {
-                        if (serialManager.Port.BytesToRead > 0)
-                        {
-                            string risposta = serialManager.Port.ReadLine().Trim();
-                            Console.WriteLine($"Risposta ricevuta: {risposta}");
-                             
-                            if (risposta == attesa)
-                            {
-                                serialManager.EnableDataReceived();
-                                return true;
-                            }
-                        }
+                        LogMessage($"Retry {attempt}/3 su: {cfg}");
+                        await Task.Delay(250);
                     }
-                    catch (TimeoutException)
-                    {
-                        // Ignora il timeout
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Errore di lettura: {ex.Message}");
-                        break;
-                    }
-
-                    Thread.Sleep(10);
                 }
+                if (!ok)
+                {
+                    LogMessage($"Timeout ack su: {cfg}");
+                    return false;
+                }
+            }
 
-                serialManager.EnableDataReceived();
-                return false;
-            });
+            return true;
+        }
+
+        private async Task<bool> SendAndWaitOkAsync(string command, int timeoutMs)
+        {
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action<string> handler = null;
+            var cts = new CancellationTokenSource(timeoutMs);
+
+            handler = (msg) =>
+            {
+                if (msg == "ok")
+                    tcs.TrySetResult(true);
+            };
+
+            serialManager.OnDataReceived += handler;
+            cts.Token.Register(() => tcs.TrySetResult(false));
+
+            serialManager.WriteRaw(command + "\n");
+
+            bool result = await tcs.Task;
+            serialManager.OnDataReceived -= handler;
+            cts.Dispose();
+            return result;
         }
          
         private void btnClear_Click(object sender, EventArgs e)
@@ -327,7 +380,7 @@ namespace Braccio_Robotico
             //         $"{MagState};" +
             //         "EXEC\n";
 
-            string command = $"M2:{trackBar2.Value};"   +
+            string command = $"M1:{trackBar1.Value};" + $"M3:{trackBar3.Value};" + $"M2:{trackBar2.Value};"   +
                    "EXEC\n";
 
             serialManager.Write(command);
@@ -336,7 +389,8 @@ namespace Braccio_Robotico
 
         private void GoHome()
         { 
-            serialManager.Write("HOME");
+            if (!SendIfReady("HOME"))
+                return;
             trackBar2.Value = 0;
             trackBar4.Value = 0;
             trackBar1.Value = 0;
@@ -613,25 +667,29 @@ namespace Braccio_Robotico
 
         private void btnGoHome4_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_4");
+            if (!SendIfReady("HOME_4"))
+                return;
             trackBar4.Value = 0; 
         }
 
         private void btnGoHome3_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_3");
+            if (!SendIfReady("HOME_3"))
+                return;
             trackBar3.Value = 0;
         }
 
         private void btnGoHome2_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_2");
+            if (!SendIfReady("HOME_2"))
+                return;
             trackBar2.Value = 0;
         }
 
         private void btnGoHome1_Click(object sender, EventArgs e)
         {
-            serialManager.Write("HOME_1");
+            if (!SendIfReady("HOME_1"))
+                return;
             trackBar1.Value = 0;
         }
 
@@ -759,7 +817,19 @@ namespace Braccio_Robotico
         private void btnTestEndStop_Click(object sender, EventArgs e)
         {
             TestEndStopEnabled = !TestEndStopEnabled;
-            serialManager.Write("TE:" + (TestEndStopEnabled ? "1" : "0"));
+            SendIfReady("TE:" + (TestEndStopEnabled ? "1" : "0"));
+        }
+
+        private bool SendIfReady(string command)
+        {
+            if (!deviceReady)
+            {
+                LogMessage("TX bloccata: inizializzazione in corso.");
+                return false;
+            }
+
+            serialManager.Write(command);
+            return true;
         }
     }
 }

@@ -17,15 +17,14 @@ bool motore4Completato = true;
 // Flag globale per indicare se siamo in movimento coordinato
 bool movingCoordinated = false;
 
-// Configurazione centralizzata dei motori
-// Indice 0 = motore1, 1 = motore2, ecc.
+// Configurazione centralizzata dei soli assi logici 1..3
+// Indice 0 = motore1, 1 = motore2, 2 = motore3
 // invertRotation: true = Inverte i pin DIR (Cambia il senso di rotazione per TUTTI i movimenti)
 // homingDirectionSign: 1 = Homing verso Positivo, -1 = Homing verso Negativo. (SCEGLIERE SEPARATAMENTE)
-MotorConfig motorConfigs[4] = {
+MotorConfig motorConfigs[3] = {
     {false, -1}, // Motore 1: Rotazione Normale, Homing verso Negativo
-    {true, -1},  // Motore 2: Rotazione Invertita, Homing verso Positivo
-    {true, -1},  // Motore 3: Rotazione Normale, Homing verso Negativo
-    {false, -1}   // Motore 4: Rotazione Normale, Homing verso Negativo
+    {false, 1},  // Motore 2: Rotazione Normale, Homing verso Positivo
+    {true, -1}   // Motore 3: Rotazione Invertita, Homing verso Negativo
 };
 
 void setupMotors()
@@ -33,17 +32,24 @@ void setupMotors()
   setupMotor(motore1, ENA1, 0);
   setupMotor(motore2, ENA2, 1);
   setupMotor(motore3, ENA3, 2);
-  setupMotor(motore4, ENA4, 3);
+
+  // M4 non ha configurazione autonoma: e' sempre mirror di M2.
+  pinMode(ENA4, OUTPUT);
+  setEnableAll(true);
+  motore4.setMaxSpeed(maxSpeed);
+  motore4.setAcceleration(maxAccel);
+  motore4.setMinPulseWidth(5);
 }
 
 void moveAllToDegrees(int g1, int g2, int g3, int g4)
 {
+  (void)g4;
   // Funzione legacy o di test rapido
-  // Impostiamo i target globali e chiamiamo la nuova funzione
+  // M4 e' derivato da M2 (specchiato), il quarto parametro viene ignorato.
   target1 = g1;
   target2 = g2;
   target3 = g3;
-  target4 = g4;
+  target4 = -g2;
   startCoordinatedMove();
 }
 
@@ -51,6 +57,9 @@ void moveAllToDegrees(int g1, int g2, int g3, int g4)
 // Esegue movimento coordinato scalando le velocità
 void startCoordinatedMove()
 {
+  // M4 e' asse virtuale: sempre in verso opposto a M2.
+  target4 = -target2;
+
   // 1. Calcola posizione attuale e target in passi
   long current1 = motore1.currentPosition();
   long current2 = motore2.currentPosition();
@@ -58,9 +67,9 @@ void startCoordinatedMove()
   long current4 = motore4.currentPosition();
 
   long targetPos1 = (long)(target1 * passiPerGrado);
-  long targetPos2 = (long)(target2 * passiPerGrado);
+  long targetPos2 = -(long)(target2 * passiPerGrado);
   long targetPos3 = (long)(target3 * passiPerGrado);
-  long targetPos4 = (long)(target4 * passiPerGrado);
+  long targetPos4 = -(long)(target4 * passiPerGrado);
 
   // 2. Calcola distanza assoluta per ogni motore
   long dist1 = abs(targetPos1 - current1);
@@ -148,6 +157,8 @@ void startCoordinatedMove()
 
 void handleMotors()
 {
+  // Aggiorna stato homing non-bloccante prima di gestire i motori normali
+  homingUpdate();
 
   if (movingCoordinated)
   {
@@ -242,7 +253,6 @@ void handleMotors()
     checkMotor(motore1, motore1Completato, ENDSTOP_1_PIN);
     checkMotor(motore2, motore2Completato, ENDSTOP_2_PIN);
     checkMotor(motore3, motore3Completato, ENDSTOP_3_PIN);
-    checkMotor(motore4, motore4Completato, ENDSTOP_4_PIN);
   }
 }
 
@@ -294,6 +304,9 @@ void setTarget(AccelStepper &motore, int targetGradi)
     return;
   }
   long targetPassi = (long)(targetGradi * passiPerGrado);
+  // Inverti SOLO il movimento normale di M2/M4 (homing escluso).
+  if (&motore == &motore2 || &motore == &motore4)
+    targetPassi = -targetPassi;
   motore.moveTo(targetPassi);
 
   static unsigned long last = 0;
@@ -337,6 +350,17 @@ void checkMotor(AccelStepper &motore, bool &completato, int endstopPin)
   }
 }
 
+// Homing non-bloccante: stato per i tre assi reali (motore1..3)
+enum HomingPhase { H_IDLE = 0, H_SEEK = 1, H_BACKOFF = 2, H_DONE = 3 };
+static HomingPhase homingPhase[3] = { H_IDLE, H_IDLE, H_IDLE };
+static bool homingActiveArr[3] = { false, false, false };
+static long prevMaxSpeedArr[3] = {0,0,0};
+static long prevAccelArr[3] = {0,0,0};
+static long prevMaxSpeedM4 = 0;
+static long prevAccelM4 = 0;
+
+bool homingInProgress = false;
+
 void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
 {
   if (ENDSTOP_ENABLED == 0)
@@ -347,77 +371,124 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
     return;
   }
 
-  int baseHomingSpeed = (motorIndex <= 1) ? 700 : 1000; // M1/M2 piu' dolci
-
-  // Calcola velocità effettiva basata sulla direzione configurata
-  // Se homingDir è -1 (standard), speed sarà -2000
-  // Se homingDir è 1 (invertito), speed sarà 2000
+  int baseHomingSpeed = 500; // velocità di ricerca endstop
   const int speedSign = motorConfigs[motorIndex].homingDirectionSign;
   int velocitaHoming = baseHomingSpeed * speedSign;
 
-  mostraMessaggio("Homing in corso...");
+  Serial.println("Avvio homing non-bloccante motore " + String(motorIndex) + " endstopPin: " + String(endstopPin));
 
-  Serial.println("Homing motore " + String(motorIndex) + " endstopPin: " + String(endstopPin));
+  // Salva velocità/accel precedenti
+  prevMaxSpeedArr[motorIndex] = (long)motore.maxSpeed();
+  prevAccelArr[motorIndex] = (long)motore.acceleration();
 
-  long prevMaxSpeed = (long)motore.maxSpeed();
-  long prevAccel = (long)motore.acceleration();
+  const bool coupledM2M4 = (motorIndex == 1);
+  if (coupledM2M4)
+  {
+    prevMaxSpeedM4 = (long)motore4.maxSpeed();
+    prevAccelM4 = (long)motore4.acceleration();
+  }
 
   motore.enableOutputs();
   motore.setMaxSpeed(abs(velocitaHoming));
   motore.setAcceleration(500);
-  
-  auto seekEndstop = [&](int speed, unsigned long timeoutMs) -> bool {
-    motore.setSpeed(speed);
-    unsigned long startTime = millis();
-    while (digitalRead(endstopPin) == HIGH && (millis() - startTime) < timeoutMs) {
-      motore.runSpeed();
-    }
-    if (digitalRead(endstopPin) == LOW) {
-      delay(3);
-      return (digitalRead(endstopPin) == LOW);
-    }
-    return false;
-  };
+  motore.setSpeed(velocitaHoming);
 
-  Serial.println(digitalRead(endstopPin) == LOW ? "Endstop già attivo all'inizio dell'homing!" : "Endstop non attivo, procedo con l'homing...");
-
-  const unsigned long HOMING_TIMEOUT_MS = 15000;
-  bool reachedEndstop = seekEndstop(velocitaHoming, HOMING_TIMEOUT_MS);
-
-  if (!reachedEndstop)
+  if (coupledM2M4)
   {
-    Serial.println(F("Finecorsa non raggiunto entro timeout"));
-    motore.setMaxSpeed(prevMaxSpeed);
-    motore.setAcceleration(prevAccel);
-    return;
+    motore4.enableOutputs();
+    motore4.setMaxSpeed(abs(velocitaHoming));
+    motore4.setAcceleration(500);
+    motore4.setSpeed(-velocitaHoming);
   }
 
-  motore.stop();
-  motore.setCurrentPosition(0);
+  // Attiva lo stato; l'azione procederà in homingUpdate() chiamata da handleMotors()
+  homingActiveArr[motorIndex] = true;
+  homingPhase[motorIndex] = H_SEEK;
+  homingInProgress = true;
+}
 
-  Serial.println(F("Homing completato"));
+// Aggiornamento non-bloccante dello stato di homing; chiamare frequentemente (es. da handleMotors())
+void homingUpdate()
+{
+  AccelStepper* motors[3] = { &motore1, &motore2, &motore3 };
+  int endPins[3] = { ENDSTOP_1_PIN, ENDSTOP_2_PIN, ENDSTOP_3_PIN };
 
-  int gradiBackoff = 5;
-  long passiBackoff = (long)(gradiBackoff * passiPerGrado);
-  long dirBackoff = (long)(-motorConfigs[motorIndex].homingDirectionSign * passiBackoff);
-  motore.moveTo(motore.currentPosition() + dirBackoff);
+  bool anyActive = false;
+  for (int i = 0; i < 3; ++i)
+  {
+    if (!homingActiveArr[i]) continue;
+    anyActive = true;
+    AccelStepper* m = motors[i];
+    const bool coupled = (i == 1);
+    int ep = endPins[i];
 
-  while (motore.distanceToGo() != 0)
-    motore.run();
-  motore.setCurrentPosition(0);
-  Serial.println(F("Backoff completato"));
+    if (homingPhase[i] == H_SEEK)
+    {
+      // Avanzamento a velocità costante
+      m->runSpeed();
+      if (coupled) motore4.runSpeed();
+      if (digitalRead(ep) == LOW)
+      {
+        // Raggiunto il finecorsa
+        m->stop();
+        if (coupled) motore4.stop();
 
-  motore.setMaxSpeed(prevMaxSpeed);
-  motore.setAcceleration(prevAccel);
+        m->setCurrentPosition(0);
+        if (coupled) motore4.setCurrentPosition(0);
 
-  // Imposta zero per tutti gli encoder attivi
-  encoderZero(1); // Motor 1
-  encoderZero(2); // Motor 2
-  encoderZero(3); // Motor 3
-  encoderZero(4); // Motor 4
-  encoderZero(5); // Motor 5
+        Serial.println(F("Homing: finecorsa raggiunto"));
 
-  mostraMessaggio("Pronto");
+        // Avvia backoff
+        int gradiBackoff = 5;
+        long passiBackoff = (long)(gradiBackoff * passiPerGrado);
+        long dirBackoff = (long)(-motorConfigs[i].homingDirectionSign * passiBackoff);
+        m->moveTo(m->currentPosition() + dirBackoff);
+        if (coupled) motore4.moveTo(motore4.currentPosition() - dirBackoff);
+
+        homingPhase[i] = H_BACKOFF;
+      }
+    }
+    else if (homingPhase[i] == H_BACKOFF)
+    {
+      bool running = false;
+      if (m->distanceToGo() != 0)
+      {
+        m->run();
+        running = true;
+      }
+      if (coupled && motore4.distanceToGo() != 0)
+      {
+        motore4.run();
+        running = true;
+      }
+
+      if (!running)
+      {
+        // Backoff completato
+        m->setCurrentPosition(0);
+        if (coupled) motore4.setCurrentPosition(0);
+        Serial.println(F("Homing: backoff completato"));
+
+        // Ripristina parametri
+        m->setMaxSpeed(prevMaxSpeedArr[i]);
+        m->setAcceleration(prevAccelArr[i]);
+        if (coupled)
+        {
+          motore4.setMaxSpeed(prevMaxSpeedM4);
+          motore4.setAcceleration(prevAccelM4);
+        }
+
+        // Azzeramento encoder per il motore interessato
+        encoderZero(i + 1);
+        if (coupled) encoderZero(4);
+
+        homingActiveArr[i] = false;
+        homingPhase[i] = H_DONE;
+      }
+    }
+  }
+
+  homingInProgress = anyActive;
 }
 
 void setupGripper()

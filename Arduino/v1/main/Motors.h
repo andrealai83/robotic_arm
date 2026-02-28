@@ -21,7 +21,8 @@ struct MotorConfig {
     int  homingDirectionSign; // 1 = Direzione POSITIVA, -1 = Direzione NEGATIVA (Indipendente da invertRotation)
 };
 
-extern MotorConfig motorConfigs[4];
+// Config solo per assi reali 1..3. M4 e' sempre un mirror di M2.
+extern MotorConfig motorConfigs[3];
 
 // API
 void setupMotors();
@@ -40,3 +41,9 @@ void setGripperAngle(int angle);
 // Nuova gestione coordinata scalata
 void startCoordinatedMove();   
 void setEnableAll(bool on);
+
+// Homing non-bloccante: stato e aggiornamento
+extern bool homingInProgress;
+void homingUpdate();
+// La chiamata a homingMotor ora avvia l'homing in modo non-bloccante
+void homingMotor(AccelStepper& motore, int endstopPin, int motorIndex); // Aggiunto indice per recuperare config

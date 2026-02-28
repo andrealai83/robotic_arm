@@ -194,20 +194,25 @@ namespace Braccio_Robotico
         }
 
         // Invia configurazioni all'Arduino
-        public static void SendConfiguration(SerialPort serial)
+        public static void SendConfiguration(Action<string> sendRaw)
         {
-            SendConfig("passiPerGiro", PassiPerGiro, serial);
-            SendConfig("microstep", Microstep, serial);
-            SendConfig("maxSpeed", MaxSpeed, serial);
-            SendConfig("maxAccel", MaxAccel, serial);
+            foreach (string command in BuildConfigurationCommands())
+            {
+                sendRaw(command + "\n");
+                Console.WriteLine($"Configurazione inviata: {command}");
+            }
         }
 
-        // Invia un singolo parametro
-        private static void SendConfig(string name, int value, SerialPort serial)
+        // Lista comandi CFG in ordine di invio.
+        public static IReadOnlyList<string> BuildConfigurationCommands()
         {
-            string comando = $"CFG:{name}:{value}\n";
-            serial.Write(comando);
-            Console.WriteLine($"Configurazione inviata: {comando.Trim()}");
-        } 
+            return new List<string>
+            {
+                $"CFG:passiPerGiro:{PassiPerGiro}",
+                $"CFG:microstep:{Microstep}",
+                $"CFG:maxSpeed:{MaxSpeed}",
+                $"CFG:maxAccel:{MaxAccel}"
+            };
+        }
     }
 }
