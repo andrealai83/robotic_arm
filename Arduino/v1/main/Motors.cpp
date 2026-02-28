@@ -371,11 +371,13 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
     return;
   }
 
-  int baseHomingSpeed = 500; // velocità di ricerca endstop
+  // Homing agganciato ai parametri runtime del movimento, ma con limiti di sicurezza.
+  const int baseHomingSpeed = constrain(maxSpeed, 200, 3000);
+  const int homingAccel = constrain(maxAccel, 100, 4000);
   const int speedSign = motorConfigs[motorIndex].homingDirectionSign;
   int velocitaHoming = baseHomingSpeed * speedSign;
 
-  Serial.println("Avvio homing non-bloccante motore " + String(motorIndex) + " endstopPin: " + String(endstopPin));
+  Serial.println("Avvio homing non-bloccante motore " + String(motorIndex + 1) + " endstopPin: " + String(endstopPin));
 
   // Salva velocità/accel precedenti
   prevMaxSpeedArr[motorIndex] = (long)motore.maxSpeed();
@@ -390,14 +392,14 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
 
   motore.enableOutputs();
   motore.setMaxSpeed(abs(velocitaHoming));
-  motore.setAcceleration(500);
+  motore.setAcceleration(homingAccel);
   motore.setSpeed(velocitaHoming);
 
   if (coupledM2M4)
   {
     motore4.enableOutputs();
     motore4.setMaxSpeed(abs(velocitaHoming));
-    motore4.setAcceleration(500);
+    motore4.setAcceleration(homingAccel);
     motore4.setSpeed(-velocitaHoming);
   }
 

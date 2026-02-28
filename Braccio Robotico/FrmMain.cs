@@ -29,6 +29,9 @@ namespace Braccio_Robotico
         private bool Running = false;
         private bool Stream = false;
         private bool deviceReady = false;
+        private Panel initOverlay;
+        private Label initOverlayLabel;
+        private System.Windows.Forms.ProgressBar initProgress;
         private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
         public FrmMain()
         {
@@ -159,29 +162,38 @@ namespace Braccio_Robotico
 
         private async void btnConnect_Click(object sender, EventArgs e)
         {
-            serialManager = new SerialManager(comboBoxComPorts.Text);
-            serialManager.OnDataReceived += LogMessage;
-            serialManager.OnDataSent += LogMessage;
-            serialManager.Open();
-              
-             viewer3D.UpdateAngles(
-                 63,    // Y → base
-                 -125,  // X → snodo 1
-                 140,   // Z → snodo 2
-                 -66    // A → snodo 3 (calamita)
-             );
+            deviceReady = false;
+            SetInitializationUi(true, "Connessione e configurazione in corso...");
+            try
+            {
+                serialManager = new SerialManager(comboBoxComPorts.Text);
+                serialManager.OnDataReceived += LogMessage;
+                serialManager.OnDataSent += LogMessage;
+                serialManager.Open();
 
-            if (serialManager.Port.IsOpen)
-            { 
-                btnConnect.Enabled = false;
-                btnDisconnect.Enabled = true;
+                viewer3D.UpdateAngles(
+                    63,    // Y → base
+                    -125,  // X → snodo 1
+                    140,   // Z → snodo 2
+                    -66    // A → snodo 3 (calamita)
+                );
 
-                bool initialized = await InitializeDeviceAsync();
-                deviceReady = initialized;
-                if (!initialized)
+                if (serialManager.Port.IsOpen)
                 {
-                    MessageBox.Show("Inizializzazione seriale non completata (timeout su 'Sistema pronto.' o su 'ok').", "Seriale", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    btnConnect.Enabled = false;
+                    btnDisconnect.Enabled = true;
+
+                    bool initialized = await InitializeDeviceAsync();
+                    deviceReady = initialized;
+                    if (!initialized)
+                    {
+                        MessageBox.Show("Inizializzazione seriale non completata (timeout su 'Sistema pronto.' o su 'ok').", "Seriale", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 }
+            }
+            finally
+            {
+                SetInitializationUi(false);
             }
         }
 
@@ -204,6 +216,8 @@ namespace Braccio_Robotico
             host.Dock = DockStyle.Fill;  
             host.Child = viewer3D; 
             pnlSimulation.Controls.Add(host);
+
+            SetupInitializationOverlay();
         }
 
         private void btnSavePosition_Click(object sender, EventArgs e)
@@ -830,6 +844,67 @@ namespace Braccio_Robotico
 
             serialManager.Write(command);
             return true;
+        }
+
+        private void SetupInitializationOverlay()
+        {
+            initOverlay = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(230, 240, 248),
+                Visible = false
+            };
+
+            initOverlayLabel = new Label
+            {
+                AutoSize = false,
+                Width = 520,
+                Height = 30,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 11f, FontStyle.Bold),
+                Text = "Inizializzazione..."
+            };
+
+            initProgress = new System.Windows.Forms.ProgressBar
+            {
+                Width = 320,
+                Height = 16,
+                Style = ProgressBarStyle.Marquee,
+                MarqueeAnimationSpeed = 30
+            };
+
+            initOverlay.Controls.Add(initOverlayLabel);
+            initOverlay.Controls.Add(initProgress);
+            this.Controls.Add(initOverlay);
+            initOverlay.BringToFront();
+            PositionInitOverlayContent();
+            this.Resize += (_, __) => PositionInitOverlayContent();
+        }
+
+        private void SetInitializationUi(bool busy, string message = "Inizializzazione...")
+        {
+            if (initOverlay == null)
+                return;
+
+            initOverlayLabel.Text = message;
+            initOverlay.Visible = busy;
+            initOverlay.BringToFront();
+            UseWaitCursor = busy;
+            PositionInitOverlayContent();
+            Application.DoEvents();
+        }
+
+        private void PositionInitOverlayContent()
+        {
+            if (initOverlay == null || initOverlayLabel == null || initProgress == null)
+                return;
+
+            int centerX = initOverlay.Width / 2;
+            int centerY = initOverlay.Height / 2;
+            initOverlayLabel.Left = centerX - (initOverlayLabel.Width / 2);
+            initOverlayLabel.Top = centerY - 28;
+            initProgress.Left = centerX - (initProgress.Width / 2);
+            initProgress.Top = centerY + 8;
         }
     }
 }
