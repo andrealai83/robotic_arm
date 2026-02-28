@@ -111,6 +111,9 @@
     <Compile Include="FrmMain.Designer.cs">
       <DependentUpon>FrmMain.cs</DependentUpon>
     </Compile>
+    <Compile Include="FrmLogConsole.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FrmManagePosizioni.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -163,12 +166,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Braccio3DViewer\Braccio3DViewer.csproj">
-      <Project>{5f09913a-416a-4747-82f9-33396f8640ca}</Project>
-      <Name>Braccio3DViewer</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.117.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.117.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />

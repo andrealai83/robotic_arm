@@ -3,10 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Shapes;
 
 namespace Braccio_Robotico
 {
@@ -78,43 +76,25 @@ namespace Braccio_Robotico
 
         private Task<bool> WaitForResponse(string attesa, int timeout)
         {
-            return Task.Run(() =>
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action<string> handler = null;
+            var cts = new System.Threading.CancellationTokenSource(timeout);
+
+            handler = (msg) =>
             {
-                serialManager.DisableDataReceived();
+                if (msg == attesa)
+                    tcs.TrySetResult(true);
+            };
 
-                DateTime startTime = DateTime.Now;
-                while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
-                {
-                    try
-                    {
-                        if (serialManager.Port.BytesToRead > 0)
-                        {
-                            string risposta = serialManager.Port.ReadLine().Trim();
-                            Console.WriteLine($"Risposta ricevuta: {risposta}");
-                             
-                            if (risposta == attesa)
-                            {
-                                serialManager.EnableDataReceived();
-                                return true;
-                            }
-                        }
-                    }
-                    catch (TimeoutException)
-                    {
-                        // Ignora il timeout
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Errore di lettura: {ex.Message}");
-                        break;
-                    }
+            serialManager.OnDataReceived += handler;
+            cts.Token.Register(() => tcs.TrySetResult(false));
 
-                    Thread.Sleep(10);
-                }
-
-                serialManager.EnableDataReceived();
-                return false;
-            });
+            return tcs.Task.ContinueWith(t =>
+            {
+                serialManager.OnDataReceived -= handler;
+                cts.Dispose();
+                return t.Result;
+            }, TaskScheduler.Default);
         }
 
 

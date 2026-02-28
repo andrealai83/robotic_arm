@@ -105,7 +105,7 @@ namespace Braccio_Robotico.Helper
 
             // Risolvi il problema 2D usando la legge dei coseni
             // per i primi due segmenti
-            double L_combined = L1 + L2; // Semplificazione: trattiamo i primi due segmenti
+            //double L_combined = L1 + L2; // Semplificazione: trattiamo i primi due segmenti
             
             // Calcola M2 usando la geometria
             double cosM3 = (d * d - L1 * L1 - L2 * L2) / (2 * L1 * L2);

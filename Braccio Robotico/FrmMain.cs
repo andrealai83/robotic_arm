@@ -11,7 +11,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.Integration;
 
 using static System.Windows.Forms.AxHost;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
@@ -26,13 +25,13 @@ namespace Braccio_Robotico
         private string MotorState = "ENA:1";
         private bool EndStopEnabled = true;
         private bool TestEndStopEnabled = false;
-        private bool Running = false;
         private bool Stream = false;
         private bool deviceReady = false;
         private Panel initOverlay;
         private Label initOverlayLabel;
         private System.Windows.Forms.ProgressBar initProgress;
-        private Braccio_Robotico.Braccio3DWindow viewer3D = new Braccio_Robotico.Braccio3DWindow();
+        private FrmLogConsole logConsole;
+        private readonly List<(string Timestamp, string Message)> logBuffer = new List<(string Timestamp, string Message)>();
         public FrmMain()
         {
             InitializeComponent(); 
@@ -45,9 +44,9 @@ namespace Braccio_Robotico
 
         private void LogMessage(string message)
         {
-            if (listViewLog.InvokeRequired)
+            if (InvokeRequired)
             {
-                listViewLog.Invoke(new Action(() => LogMessage(message)));
+                Invoke(new Action(() => LogMessage(message)));
                 return;
             }
 
@@ -152,10 +151,9 @@ namespace Braccio_Robotico
                 }
             }
 
-            var item = new ListViewItem(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-            item.SubItems.Add(message);
-            listViewLog.Items.Add(item);
-            listViewLog.Items[listViewLog.Items.Count - 1].EnsureVisible();
+            string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            logBuffer.Add((ts, message));
+            logConsole?.AppendLog(ts, message);
              
             //AggiornaTrackbarDaPosizione(message);
         }
@@ -170,13 +168,6 @@ namespace Braccio_Robotico
                 serialManager.OnDataReceived += LogMessage;
                 serialManager.OnDataSent += LogMessage;
                 serialManager.Open();
-
-                viewer3D.UpdateAngles(
-                    63,    // Y → base
-                    -125,  // X → snodo 1
-                    140,   // Z → snodo 2
-                    -66    // A → snodo 3 (calamita)
-                );
 
                 if (serialManager.Port.IsOpen)
                 {
@@ -212,11 +203,7 @@ namespace Braccio_Robotico
             if (comboBoxComPorts.Items.Count > 0)
                 comboBoxComPorts.SelectedIndex = 0;
 
-            var host = new ElementHost();
-            host.Dock = DockStyle.Fill;  
-            host.Child = viewer3D; 
-            pnlSimulation.Controls.Add(host);
-
+            ApplyCompactLayout();
             SetupInitializationOverlay();
         }
 
@@ -242,7 +229,7 @@ namespace Braccio_Robotico
 
         private async void btnPlayPosition_Click(object sender, EventArgs e)
         {
-           playAsync();
+           await playAsync();
         }
 
         private async Task playAsync()
@@ -264,13 +251,6 @@ namespace Braccio_Robotico
                     string comando = $"M1:{movi.M1}\nM2:{movi.M2}\nM4:{movi.M4}\nM3:{movi.M3}\n{movi.GRIP}\nRUN\n";
                     serialManager.WriteRaw(comando);
                     history.Add(movi);
-
-                    viewer3D.UpdateAngles(
-                        movi.M2,    // Y → base
-                        movi.M1,    // X → snodo 1
-                        movi.M4,    // Z → snodo 2
-                        movi.M3     // A → snodo 3 (calamita)
-                    );
 
                     LogMessage($"Command sent:\n{comando}");
 
@@ -398,7 +378,6 @@ namespace Braccio_Robotico
                    "EXEC\n";
 
             serialManager.Write(command);
-            Running = true;
         }
 
         private void GoHome()
@@ -458,12 +437,6 @@ namespace Braccio_Robotico
                 GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
 
-             viewer3D.UpdateAngles(
-                 trackBar1.Value,  // Y → base
-                 trackBar2.Value,     // X → snodo 1
-                 trackBar3.Value,     // Z → snodo 2
-                 trackBar4.Value      // A → snodo 3 (calamita)
-             ); 
         }
 
         private void trackBar2_ValueChanged(object sender, EventArgs e)
@@ -478,12 +451,6 @@ namespace Braccio_Robotico
                 M4 = trackBar4.Value,
                 GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
-            viewer3D.UpdateAngles(
-                trackBar1.Value,  // Y → base
-                trackBar2.Value,     // X → snodo 1
-                trackBar3.Value,     // Z → snodo 2
-                trackBar4.Value      // A → snodo 3 (calamita)
-            );
         }
 
         private void trackBar3_ValueChanged(object sender, EventArgs e)
@@ -499,12 +466,6 @@ namespace Braccio_Robotico
                 GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
 
-            viewer3D.UpdateAngles(
-                trackBar1.Value,  // Y → base
-                trackBar2.Value,     // X → snodo 1
-                trackBar3.Value,     // Z → snodo 2
-                trackBar4.Value      // A → snodo 3 (calamita)
-            );
         }
 
         private void trackBar4_ValueChanged(object sender, EventArgs e)
@@ -520,12 +481,6 @@ namespace Braccio_Robotico
                 GRIP = pinza ? "GRIP:120" : "GRIP:0"
             };
 
-            viewer3D.UpdateAngles(
-                 trackBar1.Value,  // Y → base
-                 trackBar2.Value,     // X → snodo 1
-                 trackBar3.Value,     // Z → snodo 2
-                 trackBar4.Value      // A → snodo 3 (calamita)
-             );
         }
 
         private void btnConfig_Click(object sender, EventArgs e)
@@ -650,8 +605,6 @@ namespace Braccio_Robotico
                     btnPlayPosition.Enabled = movimentoManager.HasMovements;
                 }
 
-            // Forza l'aggiornamento della simulazione 3D
-             viewer3D.UpdateAngles(y, x, z, a);
         }
         catch (Exception ex)
         {
@@ -659,21 +612,6 @@ namespace Braccio_Robotico
         }
         }
            
-        private void btnESDisabled_Click(object sender, EventArgs e)
-        {
-            if (EndStopEnabled)
-                serialManager.Write("ENDSTOP_ENABLED_0");
-            else
-                serialManager.Write("ENDSTOP_ENABLED_1");
-
-            EndStopEnabled = !EndStopEnabled;
-
-            if (EndStopEnabled) btnESDisabled.StateCommon.Back.Color1 = Color.White; else btnESDisabled.StateCommon.Back.Color1 = Color.Red;
-
-            btnESDisabled.StateNormal.Back.Color1 = btnESDisabled.StateCommon.Back.Color1;
-            btnESDisabled.StatePressed.Back.Color1 = btnESDisabled.StateCommon.Back.Color1;
-        }
-
         private void btnSTOP_Click(object sender, EventArgs e)
         {
             serialManager.Write("EMERGENCY_STOP");
@@ -791,20 +729,10 @@ namespace Braccio_Robotico
             Stream = !Stream;
         }
 
-        private void btnSend_Click(object sender, EventArgs e)
-        {
-            serialManager.Write(txtToSend.Text);
-            txtToSend.Text = "";
-        }
-
-        private void btnClearLogs_Click(object sender, EventArgs e)
-        {
-            listViewLog.Clear();
-        }
-
         private void trackBarP_ValueChanged(object sender, EventArgs e)
         { 
-            serialManager.Write("GRIP:" + trackBarP.Value.ToString());
+            if (sender is System.Windows.Forms.TrackBar tb)
+                serialManager.Write("GRIP:" + tb.Value.ToString());
         }
 
         private async void ckPlayLoop_CheckedChanged(object sender, EventArgs e)
@@ -905,6 +833,51 @@ namespace Braccio_Robotico
             initOverlayLabel.Top = centerY - 28;
             initProgress.Left = centerX - (initProgress.Width / 2);
             initProgress.Top = centerY + 8;
+        }
+
+        private void ApplyCompactLayout()
+        { 
+            this.Resize -= FrmMain_ResizeRelayout;
+            this.Resize += FrmMain_ResizeRelayout;
+        }
+
+        private void FrmMain_ResizeRelayout(object sender, EventArgs e)
+        { 
+        }
+
+      
+
+        private void OpenLogConsole()
+        {
+            if (logConsole == null || logConsole.IsDisposed)
+            {
+                logConsole = new FrmLogConsole();
+                logConsole.SendRequested += HandleConsoleSendRequested;
+                logConsole.FormClosed += (_, __) => logConsole = null;
+
+                foreach (var entry in logBuffer)
+                {
+                    logConsole.AppendLog(entry.Timestamp, entry.Message);
+                }
+            }
+
+            if (!logConsole.Visible)
+                logConsole.Show(this);
+            else
+                logConsole.Focus();
+        }
+
+        private void HandleConsoleSendRequested(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+
+            serialManager.Write(text);
+        }
+
+        private void btnOpenLogConsole_Click(object sender, EventArgs e)
+        {
+            OpenLogConsole();
         }
     }
 }

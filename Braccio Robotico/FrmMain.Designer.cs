@@ -29,9 +29,6 @@
         private void InitializeComponent()
         {
             this.listBoxPositions = new System.Windows.Forms.ListBox();
-            this.listViewLog = new System.Windows.Forms.ListView();
-            this.colTimestamp = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.colMessage = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.panel1 = new System.Windows.Forms.Panel();
             this.ckPlayLoop = new System.Windows.Forms.CheckBox();
             this.btnSalvaSetCorrente = new Krypton.Toolkit.KryptonButton();
@@ -53,19 +50,11 @@
             this.btnDisconnect = new Krypton.Toolkit.KryptonButton();
             this.GrpComPorts = new Krypton.Toolkit.KryptonGroupBox();
             this.GrpSavePosition = new Krypton.Toolkit.KryptonGroupBox();
-            this.GrpLog = new Krypton.Toolkit.KryptonGroupBox();
-            this.btnClearLogs = new Krypton.Toolkit.KryptonButton();
-            this.txtToSend = new System.Windows.Forms.TextBox();
-            this.btnSend = new Krypton.Toolkit.KryptonButton();
             this.btnGestionePosizioni = new Krypton.Toolkit.KryptonButton();
             this.trackBarNumeric3 = new Krypton.Toolkit.KryptonNumericUpDown();
             this.trackBarNumeric4 = new Krypton.Toolkit.KryptonNumericUpDown();
             this.trackBarNumeric1 = new Krypton.Toolkit.KryptonNumericUpDown();
             this.trackBarNumeric2 = new Krypton.Toolkit.KryptonNumericUpDown();
-            this.kryptonGroupBox1 = new Krypton.Toolkit.KryptonGroupBox();
-            this.pnlSimulation = new System.Windows.Forms.Panel();
-            this.BtnSetHome = new Krypton.Toolkit.KryptonButton();
-            this.btnESDisabled = new Krypton.Toolkit.KryptonButton();
             this.btnGoHome3 = new Krypton.Toolkit.KryptonButton();
             this.btnGoHome4 = new Krypton.Toolkit.KryptonButton();
             this.btnGoHome1 = new Krypton.Toolkit.KryptonButton();
@@ -75,7 +64,6 @@
             this.grpMotor = new Krypton.Toolkit.KryptonGroupBox();
             this.btnMotorON = new Krypton.Toolkit.KryptonButton();
             this.btnMotorOFF = new Krypton.Toolkit.KryptonButton();
-            this.trackBarP = new Krypton.Toolkit.KryptonTrackBar();
             this.kryptonButton2 = new Krypton.Toolkit.KryptonButton();
             this.button1 = new System.Windows.Forms.Button();
             this.btnTestEndStop = new Krypton.Toolkit.KryptonButton();
@@ -83,6 +71,8 @@
             this.END2 = new Krypton.Toolkit.KryptonButton();
             this.END3 = new Krypton.Toolkit.KryptonButton();
             this.END4 = new Krypton.Toolkit.KryptonButton();
+            this.btnOpenLogConsole = new Krypton.Toolkit.KryptonButton();
+            this.kryptonGroupBox1 = new Krypton.Toolkit.KryptonGroupBox();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.gpMagnetState.Panel)).BeginInit();
@@ -97,18 +87,13 @@
             ((System.ComponentModel.ISupportInitialize)(this.GrpSavePosition.Panel)).BeginInit();
             this.GrpSavePosition.Panel.SuspendLayout();
             this.GrpSavePosition.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.GrpLog)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.GrpLog.Panel)).BeginInit();
-            this.GrpLog.Panel.SuspendLayout();
-            this.GrpLog.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1.Panel)).BeginInit();
-            this.kryptonGroupBox1.Panel.SuspendLayout();
-            this.kryptonGroupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.grpMotor)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpMotor.Panel)).BeginInit();
             this.grpMotor.Panel.SuspendLayout();
             this.grpMotor.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1.Panel)).BeginInit();
+            this.kryptonGroupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // listBoxPositions
@@ -119,37 +104,8 @@
             this.listBoxPositions.FormattingEnabled = true;
             this.listBoxPositions.Location = new System.Drawing.Point(6, 84);
             this.listBoxPositions.Name = "listBoxPositions";
-            this.listBoxPositions.Size = new System.Drawing.Size(305, 784);
+            this.listBoxPositions.Size = new System.Drawing.Size(305, 888);
             this.listBoxPositions.TabIndex = 16;
-            // 
-            // listViewLog
-            // 
-            this.listViewLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.listViewLog.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.colTimestamp,
-            this.colMessage});
-            this.listViewLog.FullRowSelect = true;
-            this.listViewLog.GridLines = true;
-            this.listViewLog.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.listViewLog.HideSelection = false;
-            this.listViewLog.Location = new System.Drawing.Point(6, 45);
-            this.listViewLog.Name = "listViewLog";
-            this.listViewLog.Size = new System.Drawing.Size(524, 828);
-            this.listViewLog.TabIndex = 19;
-            this.listViewLog.UseCompatibleStateImageBehavior = false;
-            this.listViewLog.View = System.Windows.Forms.View.Details;
-            // 
-            // colTimestamp
-            // 
-            this.colTimestamp.Text = "Timestamp";
-            this.colTimestamp.Width = 150;
-            // 
-            // colMessage
-            // 
-            this.colMessage.Text = "Message";
-            this.colMessage.Width = 600;
             // 
             // panel1
             // 
@@ -346,7 +302,7 @@
             // 
             // btnConfig
             // 
-            this.btnConfig.Location = new System.Drawing.Point(813, 20);
+            this.btnConfig.Location = new System.Drawing.Point(665, 20);
             this.btnConfig.Name = "btnConfig";
             this.btnConfig.Size = new System.Drawing.Size(117, 66);
             this.btnConfig.TabIndex = 38;
@@ -406,60 +362,15 @@
             this.GrpSavePosition.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.GrpSavePosition.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
-            this.GrpSavePosition.Location = new System.Drawing.Point(1254, 12);
+            this.GrpSavePosition.Location = new System.Drawing.Point(1254, 244);
             // 
             // GrpSavePosition.Panel
             // 
             this.GrpSavePosition.Panel.Controls.Add(this.listBoxPositions);
             this.GrpSavePosition.Panel.Controls.Add(this.panel1);
-            this.GrpSavePosition.Size = new System.Drawing.Size(321, 900);
+            this.GrpSavePosition.Size = new System.Drawing.Size(321, 668);
             this.GrpSavePosition.TabIndex = 43;
             this.GrpSavePosition.Values.Heading = "Save Positions";
-            // 
-            // GrpLog
-            // 
-            this.GrpLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.GrpLog.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
-            this.GrpLog.Location = new System.Drawing.Point(1581, 12);
-            // 
-            // GrpLog.Panel
-            // 
-            this.GrpLog.Panel.Controls.Add(this.btnClearLogs);
-            this.GrpLog.Panel.Controls.Add(this.txtToSend);
-            this.GrpLog.Panel.Controls.Add(this.btnSend);
-            this.GrpLog.Panel.Controls.Add(this.listViewLog);
-            this.GrpLog.Size = new System.Drawing.Size(539, 900);
-            this.GrpLog.TabIndex = 45;
-            this.GrpLog.Values.Heading = "Logs";
-            // 
-            // btnClearLogs
-            // 
-            this.btnClearLogs.Location = new System.Drawing.Point(456, 14);
-            this.btnClearLogs.Name = "btnClearLogs";
-            this.btnClearLogs.Size = new System.Drawing.Size(74, 25);
-            this.btnClearLogs.TabIndex = 67;
-            this.btnClearLogs.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.btnClearLogs.Values.Text = "Clear";
-            this.btnClearLogs.Click += new System.EventHandler(this.btnClearLogs_Click);
-            // 
-            // txtToSend
-            // 
-            this.txtToSend.Location = new System.Drawing.Point(6, 16);
-            this.txtToSend.Name = "txtToSend";
-            this.txtToSend.Size = new System.Drawing.Size(364, 20);
-            this.txtToSend.TabIndex = 66;
-            // 
-            // btnSend
-            // 
-            this.btnSend.Location = new System.Drawing.Point(376, 14);
-            this.btnSend.Name = "btnSend";
-            this.btnSend.Size = new System.Drawing.Size(74, 25);
-            this.btnSend.TabIndex = 65;
-            this.btnSend.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.btnSend.Values.Text = "Send";
-            this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
             // 
             // btnGestionePosizioni
             // 
@@ -587,50 +498,6 @@
             0});
             this.trackBarNumeric2.ValueChanged += new System.EventHandler(this.trackBarNumeric2_ValueChanged);
             // 
-            // kryptonGroupBox1
-            // 
-            this.kryptonGroupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-            this.kryptonGroupBox1.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
-            this.kryptonGroupBox1.Location = new System.Drawing.Point(12, 244);
-            // 
-            // kryptonGroupBox1.Panel
-            // 
-            this.kryptonGroupBox1.Panel.Controls.Add(this.pnlSimulation);
-            this.kryptonGroupBox1.Size = new System.Drawing.Size(1236, 668);
-            this.kryptonGroupBox1.TabIndex = 53;
-            this.kryptonGroupBox1.Values.Heading = "Graph";
-            // 
-            // pnlSimulation
-            // 
-            this.pnlSimulation.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlSimulation.Location = new System.Drawing.Point(0, 0);
-            this.pnlSimulation.Name = "pnlSimulation";
-            this.pnlSimulation.Size = new System.Drawing.Size(1232, 646);
-            this.pnlSimulation.TabIndex = 54;
-            // 
-            // BtnSetHome
-            // 
-            this.BtnSetHome.Location = new System.Drawing.Point(665, 20);
-            this.BtnSetHome.Name = "BtnSetHome";
-            this.BtnSetHome.Size = new System.Drawing.Size(68, 66);
-            this.BtnSetHome.TabIndex = 54;
-            this.BtnSetHome.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.BtnSetHome.Values.Text = "Set Home";
-            this.BtnSetHome.Click += new System.EventHandler(this.BtnSetHome_Click);
-            // 
-            // btnESDisabled
-            // 
-            this.btnESDisabled.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
-            this.btnESDisabled.Location = new System.Drawing.Point(739, 20);
-            this.btnESDisabled.Name = "btnESDisabled";
-            this.btnESDisabled.Size = new System.Drawing.Size(68, 66);
-            this.btnESDisabled.StateCommon.Back.Color1 = System.Drawing.Color.White;
-            this.btnESDisabled.TabIndex = 55;
-            this.btnESDisabled.Values.DropDownArrowColor = System.Drawing.Color.Empty;
-            this.btnESDisabled.Values.Text = "E/S";
-            this.btnESDisabled.Click += new System.EventHandler(this.btnESDisabled_Click);
-            // 
             // btnGoHome3
             // 
             this.btnGoHome3.Location = new System.Drawing.Point(781, 132);
@@ -705,7 +572,7 @@
             // grpMotor
             // 
             this.grpMotor.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
-            this.grpMotor.Location = new System.Drawing.Point(936, 9);
+            this.grpMotor.Location = new System.Drawing.Point(788, 12);
             // 
             // grpMotor.Panel
             // 
@@ -736,23 +603,6 @@
             this.btnMotorOFF.Values.Text = "OFF";
             this.btnMotorOFF.Click += new System.EventHandler(this.btnMotorOFF_Click);
             // 
-            // trackBarP
-            // 
-            this.trackBarP.Location = new System.Drawing.Point(865, 205);
-            this.trackBarP.Maximum = 120;
-            this.trackBarP.Name = "trackBarP";
-            this.trackBarP.Size = new System.Drawing.Size(165, 34);
-            this.trackBarP.StateNormal.Tick.Color1 = System.Drawing.Color.White;
-            this.trackBarP.StateNormal.Tick.Color2 = System.Drawing.Color.Empty;
-            this.trackBarP.StateNormal.Tick.Color3 = System.Drawing.Color.Empty;
-            this.trackBarP.StateNormal.Tick.Color4 = System.Drawing.Color.Empty;
-            this.trackBarP.StateNormal.Tick.Color5 = System.Drawing.Color.Empty;
-            this.trackBarP.TabIndex = 63;
-            this.trackBarP.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
-            this.trackBarP.TrackBarSize = Krypton.Toolkit.PaletteTrackBarSize.Large;
-            this.trackBarP.VolumeControl = true;
-            this.trackBarP.ValueChanged += new System.EventHandler(this.trackBarP_ValueChanged);
-            // 
             // kryptonButton2
             // 
             this.kryptonButton2.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
@@ -767,11 +617,11 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(1036, 204);
+            this.button1.Location = new System.Drawing.Point(860, 204);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(63, 35);
+            this.button1.Size = new System.Drawing.Size(224, 35);
             this.button1.TabIndex = 65;
-            this.button1.Text = "button1";
+            this.button1.Text = "PINZA";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
@@ -789,7 +639,7 @@
             // 
             // END1
             // 
-            this.END1.Location = new System.Drawing.Point(1118, 167);
+            this.END1.Location = new System.Drawing.Point(1254, 20);
             this.END1.Name = "END1";
             this.END1.Size = new System.Drawing.Size(40, 40);
             this.END1.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
@@ -805,7 +655,7 @@
             // 
             // END2
             // 
-            this.END2.Location = new System.Drawing.Point(1177, 167);
+            this.END2.Location = new System.Drawing.Point(1313, 20);
             this.END2.Name = "END2";
             this.END2.Size = new System.Drawing.Size(40, 40);
             this.END2.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
@@ -821,7 +671,7 @@
             // 
             // END3
             // 
-            this.END3.Location = new System.Drawing.Point(1118, 208);
+            this.END3.Location = new System.Drawing.Point(1254, 61);
             this.END3.Name = "END3";
             this.END3.Size = new System.Drawing.Size(40, 40);
             this.END3.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
@@ -837,7 +687,7 @@
             // 
             // END4
             // 
-            this.END4.Location = new System.Drawing.Point(1177, 208);
+            this.END4.Location = new System.Drawing.Point(1313, 61);
             this.END4.Name = "END4";
             this.END4.Size = new System.Drawing.Size(40, 40);
             this.END4.StateCommon.Back.Color1 = System.Drawing.Color.Lime;
@@ -851,19 +701,41 @@
             this.END4.Values.DropDownArrowColor = System.Drawing.Color.Empty;
             this.END4.Values.Text = "1";
             // 
+            // btnOpenLogConsole
+            // 
+            this.btnOpenLogConsole.ButtonStyle = Krypton.Toolkit.ButtonStyle.Custom1;
+            this.btnOpenLogConsole.Location = new System.Drawing.Point(1095, 170);
+            this.btnOpenLogConsole.Name = "btnOpenLogConsole";
+            this.btnOpenLogConsole.Size = new System.Drawing.Size(151, 29);
+            this.btnOpenLogConsole.StateCommon.Back.Color1 = System.Drawing.Color.White;
+            this.btnOpenLogConsole.TabIndex = 71;
+            this.btnOpenLogConsole.Values.DropDownArrowColor = System.Drawing.Color.Empty;
+            this.btnOpenLogConsole.Values.Text = "Open Console";
+            this.btnOpenLogConsole.Click += new System.EventHandler(this.btnOpenLogConsole_Click);
+            // 
+            // kryptonGroupBox1
+            // 
+            this.kryptonGroupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.kryptonGroupBox1.CaptionStyle = Krypton.Toolkit.LabelStyle.BoldControl;
+            this.kryptonGroupBox1.Location = new System.Drawing.Point(12, 244);
+            this.kryptonGroupBox1.Size = new System.Drawing.Size(1236, 668);
+            this.kryptonGroupBox1.TabIndex = 53;
+            this.kryptonGroupBox1.Values.Heading = "Graph";
+            // 
             // FrmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(2132, 924);
+            this.ClientSize = new System.Drawing.Size(1579, 924);
             this.Controls.Add(this.END4);
             this.Controls.Add(this.END3);
             this.Controls.Add(this.END2);
             this.Controls.Add(this.END1);
+            this.Controls.Add(this.btnOpenLogConsole);
             this.Controls.Add(this.btnTestEndStop);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.kryptonButton2);
-            this.Controls.Add(this.trackBarP);
             this.Controls.Add(this.grpMotor);
             this.Controls.Add(this.btnImport);
             this.Controls.Add(this.btnSTOP);
@@ -872,15 +744,12 @@
             this.Controls.Add(this.btnGoHome1);
             this.Controls.Add(this.btnGoHome4);
             this.Controls.Add(this.btnGoHome3);
-            this.Controls.Add(this.btnESDisabled);
-            this.Controls.Add(this.BtnSetHome);
             this.Controls.Add(this.kryptonGroupBox1);
             this.Controls.Add(this.trackBarNumeric2);
             this.Controls.Add(this.trackBarNumeric1);
             this.Controls.Add(this.trackBarNumeric4);
             this.Controls.Add(this.trackBarNumeric3);
             this.Controls.Add(this.btnGestionePosizioni);
-            this.Controls.Add(this.GrpLog);
             this.Controls.Add(this.GrpSavePosition);
             this.Controls.Add(this.GrpComPorts);
             this.Controls.Add(this.btnConfig);
@@ -909,19 +778,13 @@
             this.GrpSavePosition.Panel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.GrpSavePosition)).EndInit();
             this.GrpSavePosition.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.GrpLog.Panel)).EndInit();
-            this.GrpLog.Panel.ResumeLayout(false);
-            this.GrpLog.Panel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.GrpLog)).EndInit();
-            this.GrpLog.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1.Panel)).EndInit();
-            this.kryptonGroupBox1.Panel.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1)).EndInit();
-            this.kryptonGroupBox1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.grpMotor.Panel)).EndInit();
             this.grpMotor.Panel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.grpMotor)).EndInit();
             this.grpMotor.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1.Panel)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.kryptonGroupBox1)).EndInit();
+            this.kryptonGroupBox1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -929,9 +792,6 @@
 
         #endregion
         private System.Windows.Forms.ListBox listBoxPositions;
-        private System.Windows.Forms.ListView listViewLog;
-        private System.Windows.Forms.ColumnHeader colTimestamp;
-        private System.Windows.Forms.ColumnHeader colMessage;
         private System.Windows.Forms.Panel panel1;
         private Krypton.Toolkit.KryptonButton magnetON;
         private Krypton.Toolkit.KryptonButton magnetOFF;
@@ -951,17 +811,12 @@
         private Krypton.Toolkit.KryptonButton btnDisconnect;
         private Krypton.Toolkit.KryptonGroupBox GrpComPorts;
         private Krypton.Toolkit.KryptonGroupBox GrpSavePosition;
-        private Krypton.Toolkit.KryptonGroupBox GrpLog;
         private Krypton.Toolkit.KryptonButton btnGestionePosizioni;
         private Krypton.Toolkit.KryptonButton btnSalvaSetCorrente;
         private Krypton.Toolkit.KryptonNumericUpDown trackBarNumeric3;
         private Krypton.Toolkit.KryptonNumericUpDown trackBarNumeric4;
         private Krypton.Toolkit.KryptonNumericUpDown trackBarNumeric1;
         private Krypton.Toolkit.KryptonNumericUpDown trackBarNumeric2;
-        private Krypton.Toolkit.KryptonGroupBox kryptonGroupBox1;
-        private System.Windows.Forms.Panel pnlSimulation;
-        private Krypton.Toolkit.KryptonButton BtnSetHome;
-        private Krypton.Toolkit.KryptonButton btnESDisabled;
         private Krypton.Toolkit.KryptonButton btnGoHome3;
         private Krypton.Toolkit.KryptonButton btnGoHome4;
         private Krypton.Toolkit.KryptonButton btnGoHome1;
@@ -971,11 +826,7 @@
         private Krypton.Toolkit.KryptonGroupBox grpMotor;
         private Krypton.Toolkit.KryptonButton btnMotorON;
         private Krypton.Toolkit.KryptonButton btnMotorOFF;
-        private Krypton.Toolkit.KryptonTrackBar trackBarP;
         private Krypton.Toolkit.KryptonButton kryptonButton2;
-        private System.Windows.Forms.TextBox txtToSend;
-        private Krypton.Toolkit.KryptonButton btnSend;
-        private Krypton.Toolkit.KryptonButton btnClearLogs;
         private System.Windows.Forms.CheckBox ckPlayLoop;
         private System.Windows.Forms.Button button1;
         private Krypton.Toolkit.KryptonButton btnTestEndStop;
@@ -983,6 +834,8 @@
         private Krypton.Toolkit.KryptonButton END2;
         private Krypton.Toolkit.KryptonButton END3;
         private Krypton.Toolkit.KryptonButton END4;
+        private Krypton.Toolkit.KryptonGroupBox kryptonGroupBox1;
+        private Krypton.Toolkit.KryptonButton btnOpenLogConsole;
     }
 }
 

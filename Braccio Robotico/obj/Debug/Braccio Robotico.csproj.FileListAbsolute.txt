@@ -60,7 +60,6 @@ F:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.xml
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.exe.config
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.exe
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio Robotico.pdb
-E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Krypton.Toolkit.dll
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Data.Sqlite.dll
@@ -76,8 +75,6 @@ E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Encodings.Web.dll
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Text.Json.dll
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.Threading.Tasks.Extensions.dll
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\System.ValueTuple.dll
-E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.pdb
-E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Braccio3DViewer.exe.config
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Krypton.Toolkit.xml
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml
 E:\Repos\robotic_arm\Braccio Robotico\bin\Debug\Microsoft.Data.Sqlite.xml
