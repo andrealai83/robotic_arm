@@ -52,7 +52,7 @@ void loop() {
 
   handleMotors();    
 
-  encoderUpdate();
+  //encoderUpdate();
 
   endstopTelemetryUpdate();
   

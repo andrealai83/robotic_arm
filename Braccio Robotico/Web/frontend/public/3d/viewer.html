@@ -1,0 +1,418 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Robotic Arm GLB Preview</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0e1116; color: #dbe2ea; font-family: Segoe UI, Arial, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .hud {
+      position: fixed; left: 12px; top: 12px; z-index: 20;
+      background: rgba(15, 18, 24, 0.8); border: 1px solid #2b3442; border-radius: 10px;
+      padding: 10px 12px; font-size: 12px; max-width: 420px;
+      backdrop-filter: blur(3px);
+    }
+    .debug {
+      position: fixed; right: 12px; top: 12px; z-index: 20;
+      width: 460px; max-height: calc(100vh - 24px); overflow: auto;
+      background: rgba(15, 18, 24, 0.86); border: 1px solid #2b3442; border-radius: 10px;
+      padding: 10px 12px; font-size: 12px;
+      backdrop-filter: blur(3px);
+    }
+    .ok { color: #7ee787; }
+    .err { color: #ff7b72; }
+    .line { margin-top: 7px; display: grid; grid-template-columns: 34px 1fr 60px; gap: 8px; align-items: center; }
+    .mapline { margin-top: 6px; display: grid; grid-template-columns: 34px 1fr 64px 52px; gap: 6px; align-items: center; }
+    input[type="range"] { width: 100%; }
+    select, button {
+      background: #111722; color: #dbe2ea; border: 1px solid #334155; border-radius: 6px;
+      font-size: 12px; padding: 4px 6px;
+    }
+    button { cursor: pointer; }
+    pre {
+      margin: 8px 0 0; background: #0b111a; border: 1px solid #1f2a3a; border-radius: 8px;
+      padding: 8px; max-height: 220px; overflow: auto; white-space: pre-wrap;
+      font-family: Consolas, monospace; font-size: 11px;
+    }
+    .row { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div><strong>Model:</strong> <code>robotic_arm.glb</code></div>
+    <div id="status">Loading...</div>
+    <div>Mouse: rotate | Wheel: zoom | Right button: pan</div>
+    <div id="angleEcho" style="margin-top:6px;opacity:.9">Angles: M1=0 M2=0 M3=0 M4=0</div>
+  </div>
+
+  <div class="debug">
+    <div><strong>Debug Joint Mapping</strong></div>
+    <div style="opacity:.85">Muovi slider, scegli nodo/asse/segno per ogni motore.</div>
+
+    <div class="line"><label>M1</label><input id="m1" type="range" min="0" max="360" step="1" value="0"><span id="m1v">0</span></div>
+    <div class="line"><label>M2</label><input id="m2" type="range" min="0" max="360" step="1" value="0"><span id="m2v">0</span></div>
+    <div class="line"><label>M3</label><input id="m3" type="range" min="0" max="360" step="1" value="0"><span id="m3v">0</span></div>
+    <div class="line"><label>M4</label><input id="m4" type="range" min="0" max="360" step="1" value="0"><span id="m4v">0</span></div>
+    <div class="row">
+      <label style="display:flex;align-items:center;gap:6px;">
+        <input id="m4Coupled" type="checkbox" checked>
+        M4 follows M2 (invert)
+      </label>
+    </div>
+
+    <div style="margin-top:10px"><strong>Motor -> Node Mapping</strong></div>
+    <div class="mapline"><label>M1</label><select id="m1Node"></select><select id="m1Axis"><option>x</option><option selected>y</option><option>z</option></select><select id="m1Sign"><option value="1">+</option><option value="-1">-</option></select></div>
+    <div class="mapline"><label>M2</label><select id="m2Node"></select><select id="m2Axis"><option>x</option><option selected>y</option><option>z</option></select><select id="m2Sign"><option value="1">+</option><option value="-1">-</option></select></div>
+    <div class="mapline"><label>M3</label><select id="m3Node"></select><select id="m3Axis"><option>x</option><option selected>y</option><option>z</option></select><select id="m3Sign"><option value="1">+</option><option value="-1">-</option></select></div>
+    <div class="mapline"><label>M4</label><select id="m4Node"></select><select id="m4Axis"><option>x</option><option selected>y</option><option>z</option></select><select id="m4Sign"><option value="1">+</option><option value="-1">-</option></select></div>
+
+    <div class="row">
+      <button id="resetPose">Reset Pose</button>
+      <button id="printCfg">Print Mapping</button>
+    </div>
+
+    <div style="margin-top:10px"><strong>Model Nodes</strong></div>
+    <pre id="nodeList">(loading...)</pre>
+  </div>
+
+  <div id="app"></div>
+
+  <script type="module">
+    const statusEl = document.getElementById('status');
+    const angleEchoEl = document.getElementById('angleEcho');
+    const nodeListEl = document.getElementById('nodeList');
+    const app = document.getElementById('app');
+
+    const sliders = {
+      m1: document.getElementById('m1'),
+      m2: document.getElementById('m2'),
+      m3: document.getElementById('m3'),
+      m4: document.getElementById('m4')
+    };
+    const labels = {
+      m1: document.getElementById('m1v'),
+      m2: document.getElementById('m2v'),
+      m3: document.getElementById('m3v'),
+      m4: document.getElementById('m4v')
+    };
+
+    let nodeMap = new Map();
+    const bases = new Map();
+    const mapping = {
+      m1: { node: null, axis: 'y', sign: 1 },
+      m2: { node: null, axis: 'y', sign: 1 },
+      m3: { node: null, axis: 'y', sign: 1 },
+      m4: { node: null, axis: 'y', sign: 1 }
+    };
+    const storageKey = 'robotic_arm_viewer_mapping_v1';
+    let m4Coupled = true;
+    let liveSyncEnabled = true;
+    let lastLiveTs = '';
+
+    function getMotorValue(m) { return Number(sliders[m].value || 0); }
+
+    function updateEcho() {
+      const effectiveM4 = m4Coupled ? -getMotorValue('m2') : getMotorValue('m4');
+      angleEchoEl.textContent = `Angles: M1=${getMotorValue('m1')} M2=${getMotorValue('m2')} M3=${getMotorValue('m3')} M4=${effectiveM4}${m4Coupled ? ' (coupled)' : ''}`;
+    }
+
+    function applyMotor(motor, deg) {
+      const cfg = mapping[motor];
+      if (!cfg?.node || !bases.has(cfg.node)) return;
+      const n = nodeMap.get(cfg.node);
+      const b = bases.get(cfg.node);
+      if (!n || !b) return;
+
+      n.rotation.set(b.x, b.y, b.z);
+      const rad = (deg * cfg.sign) * Math.PI / 180;
+      n.rotation[cfg.axis] = b[cfg.axis] + rad;
+    }
+
+    function applyAll() {
+      const effectiveM4 = m4Coupled ? -getMotorValue('m2') : getMotorValue('m4');
+      applyMotor('m1', getMotorValue('m1'));
+      applyMotor('m2', getMotorValue('m2'));
+      applyMotor('m3', getMotorValue('m3'));
+      applyMotor('m4', effectiveM4);
+      updateEcho();
+    }
+
+    async function pollLiveAngles() {
+      if (!liveSyncEnabled) return;
+      try {
+        const res = await fetch('./live_angles.json?ts=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data || data.ts === lastLiveTs) return;
+        lastLiveTs = data.ts || '';
+        if (typeof window.setAngles === 'function') {
+          window.setAngles(data.m1, data.m2, data.m3, data.m4);
+        }
+      } catch (_) {
+        // File non ancora presente o server non attivo: ignora.
+      }
+    }
+
+    function saveMapping() {
+      const payload = { mapping, m4Coupled };
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+    }
+
+    function loadMappingFromStorage() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.mapping) {
+          for (const m of ['m1','m2','m3','m4']) {
+            if (parsed.mapping[m]) mapping[m] = { ...mapping[m], ...parsed.mapping[m] };
+          }
+        }
+        if (typeof parsed?.m4Coupled === 'boolean') m4Coupled = parsed.m4Coupled;
+      } catch (e) {
+        console.warn('Invalid stored mapping', e);
+      }
+    }
+
+    function bindDebugUi() {
+      for (const m of ['m1','m2','m3','m4']) {
+        sliders[m].addEventListener('input', () => {
+          labels[m].textContent = sliders[m].value;
+          applyAll();
+        });
+
+        const nodeSel = document.getElementById(`${m}Node`);
+        const axisSel = document.getElementById(`${m}Axis`);
+        const signSel = document.getElementById(`${m}Sign`);
+
+        nodeSel.addEventListener('change', () => {
+          mapping[m].node = nodeSel.value || null;
+          saveMapping();
+          applyAll();
+        });
+        axisSel.addEventListener('change', () => {
+          mapping[m].axis = axisSel.value;
+          saveMapping();
+          applyAll();
+        });
+        signSel.addEventListener('change', () => {
+          mapping[m].sign = Number(signSel.value);
+          saveMapping();
+          applyAll();
+        });
+      }
+
+      const coupledEl = document.getElementById('m4Coupled');
+      coupledEl.checked = m4Coupled;
+      sliders.m4.disabled = m4Coupled;
+      coupledEl.addEventListener('change', () => {
+        m4Coupled = coupledEl.checked;
+        sliders.m4.disabled = m4Coupled;
+        saveMapping();
+        applyAll();
+      });
+
+      document.getElementById('resetPose').addEventListener('click', () => {
+        for (const m of ['m1','m2','m3','m4']) {
+          sliders[m].value = '0';
+          labels[m].textContent = '0';
+        }
+        applyAll();
+      });
+
+      document.getElementById('printCfg').addEventListener('click', () => {
+        const cfg = {
+          m1: mapping.m1,
+          m2: mapping.m2,
+          m3: mapping.m3,
+          m4: mapping.m4,
+          m4Coupled
+        };
+        console.log('Viewer mapping:', cfg);
+        alert('Mapping stampato in console browser (F12).');
+      });
+    }
+
+    function populateNodeSelectors() {
+      const names = Array.from(nodeMap.keys());
+      for (const m of ['m1','m2','m3','m4']) {
+        const sel = document.getElementById(`${m}Node`);
+        sel.innerHTML = '<option value="">(none)</option>';
+        for (const n of names) {
+          const o = document.createElement('option');
+          o.value = n;
+          o.textContent = n;
+          sel.appendChild(o);
+        }
+        if (mapping[m]?.node) sel.value = mapping[m].node;
+        document.getElementById(`${m}Axis`).value = mapping[m].axis;
+        document.getElementById(`${m}Sign`).value = String(mapping[m].sign);
+      }
+    }
+
+    function autoAssignMapping() {
+      const names = Array.from(nodeMap.keys());
+      if (names.length === 0) return;
+
+      const defaults = {
+        m1: { node: 'mesh_5', axis: 'y', sign: 1 },
+        m2: { node: 'mesh_5', axis: 'z', sign: 1 },
+        m3: { node: 'mesh_6', axis: 'z', sign: 1 },
+        m4: { node: 'mesh_5', axis: 'y', sign: 1 }
+      };
+
+      for (const m of ['m1', 'm2', 'm3', 'm4']) {
+        const currentNode = mapping[m]?.node;
+        if (currentNode && nodeMap.has(currentNode))
+          continue;
+
+        const preferred = defaults[m];
+        if (preferred && nodeMap.has(preferred.node)) {
+          mapping[m] = { ...mapping[m], ...preferred };
+        } else {
+          mapping[m].node = names[0];
+        }
+      }
+    }
+
+    function dumpNodeTree(root) {
+      const lines = [];
+      root.traverse((obj) => {
+        if (!obj.name) return;
+        const depth = obj.parent ? obj.parent.children ? depthOf(obj) : 0 : 0;
+        lines.push(`${' '.repeat(depth * 2)}- ${obj.name}`);
+      });
+      nodeListEl.textContent = lines.length ? lines.join('\n') : '(no named nodes)';
+
+      function depthOf(o) {
+        let d = 0;
+        let p = o.parent;
+        while (p && p !== root.parent) { d++; p = p.parent; }
+        return Math.max(0, d - 1);
+      }
+    }
+
+    function cacheNodesAndBases(root) {
+      nodeMap.clear();
+      bases.clear();
+      root.traverse((obj) => {
+        if (!obj.name) return;
+        nodeMap.set(obj.name, obj);
+        bases.set(obj.name, { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z });
+      });
+    }
+
+    async function boot() {
+      try {
+        loadMappingFromStorage();
+        statusEl.innerHTML = 'Loading libraries...';
+        const THREE = await import('./vendor/three/three.module.js');
+        const { OrbitControls } = await import('./vendor/three/examples/jsm/controls/OrbitControls.js');
+        const { GLTFLoader } = await import('./vendor/three/examples/jsm/loaders/GLTFLoader.js');
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        app.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0e1116);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 200);
+        camera.position.set(1.8, 1.5, 2.2);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 0.5, 0);
+        controls.update();
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        keyLight.position.set(2, 3, 2);
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8ab4ff, 0.4);
+        fillLight.position.set(-2, 1, -1);
+        scene.add(fillLight);
+
+        scene.add(new THREE.GridHelper(8, 40, 0x334155, 0x1f2937));
+        scene.add(new THREE.AxesHelper(0.5));
+
+        bindDebugUi();
+
+        statusEl.innerHTML = 'Loading model...';
+        const loader = new GLTFLoader();
+        loader.load(
+          './robotic_arm.glb',
+          (gltf) => {
+            const model = gltf.scene;
+            scene.add(model);
+
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            model.position.sub(center);
+            model.position.y += size.y * 0.5;
+
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const fitDist = maxDim * 1.8;
+            camera.position.set(fitDist, fitDist * 0.8, fitDist);
+            controls.target.set(0, size.y * 0.4, 0);
+            controls.update();
+
+            cacheNodesAndBases(model);
+            autoAssignMapping();
+            populateNodeSelectors();
+            dumpNodeTree(model);
+            applyAll();
+            saveMapping();
+
+            statusEl.innerHTML = '<span class="ok">Loaded</span>';
+          },
+          undefined,
+          (err) => {
+            console.error(err);
+            statusEl.innerHTML = '<span class="err">GLB load error: ' + (err?.message || err) + '</span>';
+          }
+        );
+
+        // API globale per integrazione da client C#/WebView
+        window.setAngles = (m1, m2, m3, m4) => {
+          if (Number.isFinite(m1)) { sliders.m1.value = String(m1); labels.m1.textContent = String(Math.round(m1)); }
+          if (Number.isFinite(m2)) { sliders.m2.value = String(m2); labels.m2.textContent = String(Math.round(m2)); }
+          if (Number.isFinite(m3)) { sliders.m3.value = String(m3); labels.m3.textContent = String(Math.round(m3)); }
+          if (!m4Coupled && Number.isFinite(m4)) { sliders.m4.value = String(m4); labels.m4.textContent = String(Math.round(m4)); }
+          applyAll();
+        };
+
+        window.addEventListener('message', (event) => {
+          if (event.origin !== window.location.origin) return;
+          const payload = event.data || {};
+          if (payload.type !== 'setAngles') return;
+          window.setAngles(payload.m1, payload.m2, payload.m3, payload.m4);
+        });
+
+        setInterval(pollLiveAngles, 180);
+
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        renderer.setAnimationLoop(() => {
+          controls.update();
+          renderer.render(scene, camera);
+        });
+      } catch (err) {
+        console.error(err);
+        statusEl.innerHTML = '<span class="err">Library load error: ' + (err?.message || err) + '</span>';
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>

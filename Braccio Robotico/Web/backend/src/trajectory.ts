@@ -1,6 +1,9 @@
 import { Movimento, KinematicsHelper } from './kinematics';
 
 export class TrajectoryInterpolator {
+    private static resolveM4(m: Movimento): number {
+        return Number.isFinite(m.m4) ? (m.m4 as number) : -m.m2;
+    }
 
     public static InterpolateMovements(movements: Movimento[], stepsPerTransition: number = 10): Movimento[] {
         if (!movements || movements.length === 0) return [];
@@ -32,7 +35,7 @@ export class TrajectoryInterpolator {
             m1: KinematicsHelper.Lerp(from.m1, to.m1, t),
             m2: KinematicsHelper.Lerp(from.m2, to.m2, t),
             m3: KinematicsHelper.Lerp(from.m3, to.m3, t),
-            m4: KinematicsHelper.Lerp(from.m4, to.m4, t),
+            m4: KinematicsHelper.Lerp(this.resolveM4(from), this.resolveM4(to), t),
             c: t < 1.0 ? from.c : to.c
         };
     }
@@ -40,7 +43,7 @@ export class TrajectoryInterpolator {
     public static CalculateSteps(from: Movimento, to: Movimento, degreesPerStep: number = 5.0): number {
         const maxDelta = Math.max(
             Math.max(Math.abs(to.m1 - from.m1), Math.abs(to.m2 - from.m2)),
-            Math.max(Math.abs(to.m3 - from.m3), Math.abs(to.m4 - from.m4))
+            Math.max(Math.abs(to.m3 - from.m3), Math.abs(this.resolveM4(to) - this.resolveM4(from)))
         );
 
         const steps = Math.ceil(maxDelta / degreesPerStep);

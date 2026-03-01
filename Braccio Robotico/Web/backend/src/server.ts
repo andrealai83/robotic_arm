@@ -38,22 +38,22 @@ app.get('/api/ports', async (req, res) => {
 // Movement endpoints
 app.post('/api/move/raw', (req, res) => {
     const mov = req.body as Movimento;
-    const cmd = `M1:${mov.m1}\nM2:${mov.m2}\nM4:${mov.m4}\nM3:${mov.m3}\n${mov.c}\nRUN\n`;
+    const cmd = buildRunCommand(mov);
     serial.write(cmd);
     res.json({ status: 'sent', command: cmd });
 });
 
 app.post('/api/move/cartesian', (req, res) => {
-    const { x, y, z, m1, m2, m3, m4 } = req.body;
-    // m1..m4 are current angles to help IK choose nearest solution
+    const { x, y, z, m1, m2, m3 } = req.body;
+    // m1..m3 are current angles to help IK choose nearest solution
 
     const target = new CartesianPosition(x, y, z);
-    const current = (m1 !== undefined) ? { m1, m2, m3, m4, c: 'C:0' } as Movimento : null;
+    const current = (m1 !== undefined) ? { m1, m2, m3, c: 'C:0' } as Movimento : null;
 
     const mov = KinematicsHelper.InverseKinematics(target, current);
 
     if (mov) {
-        const cmd = `M1:${mov.m1.toFixed(2)}\nM2:${mov.m2.toFixed(2)}\nM4:${mov.m4.toFixed(2)}\nM3:${mov.m3.toFixed(2)}\n${mov.c}\nRUN\n`;
+        const cmd = buildRunCommand(mov);
         serial.write(cmd);
         res.json({ status: 'calculated', movement: mov, command: cmd });
     } else {
@@ -116,11 +116,15 @@ app.post('/api/sequence/run/:id', (req, res) => {
 
 async function runSequence(moves: Movimento[]) {
     for (const mov of moves) {
-        const cmd = `M1:${mov.m1.toFixed(2)}\nM2:${mov.m2.toFixed(2)}\nM4:${mov.m4.toFixed(2)}\nM3:${mov.m3.toFixed(2)}\n${mov.c}\nRUN\n`;
+        const cmd = buildRunCommand(mov);
         serial.write(cmd);
         // Wait estimate
         await new Promise(r => setTimeout(r, 200)); // Simple delay for now
     }
+}
+
+function buildRunCommand(mov: Movimento): string {
+    return `M1:${mov.m1.toFixed(2)}\nM2:${mov.m2.toFixed(2)}\nM3:${mov.m3.toFixed(2)}\n${mov.c}\nRUN\n`;
 }
 
 app.listen(port, () => {

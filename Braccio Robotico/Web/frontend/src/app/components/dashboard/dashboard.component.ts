@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RobotService, Movimento, PositionSet } from '../../services/robot.service';
@@ -10,7 +10,9 @@ import { RobotService, Movimento, PositionSet } from '../../services/robot.servi
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit {
+    @ViewChild('viewerFrame') viewerFrame?: ElementRef<HTMLIFrameElement>;
+
     // Connection
     ports: string[] = [];
     selectedPort: string = 'COM5';
@@ -19,7 +21,6 @@ export class DashboardComponent implements OnInit {
     m1: number = 90;
     m2: number = 90;
     m3: number = 90;
-    m4: number = 90;
     magnet: boolean = false;
 
     // Cartesian Control
@@ -30,15 +31,15 @@ export class DashboardComponent implements OnInit {
     // Sequences
     sequences: PositionSet[] = [];
 
-    constructor(public robotService: RobotService) {
-        effect(() => {
-            // React to signal changes if needed
-        });
-    }
+    constructor(public robotService: RobotService) { }
 
     async ngOnInit() {
         this.refreshPorts();
         this.refreshSequences();
+    }
+
+    ngAfterViewInit(): void {
+        this.pushViewerAngles();
     }
 
     async refreshPorts() {
@@ -57,19 +58,20 @@ export class DashboardComponent implements OnInit {
             m1: this.m1,
             m2: this.m2,
             m3: this.m3,
-            m4: this.m4,
             c: this.magnet ? 'C:1' : 'C:0'
         };
         await this.robotService.moveRaw(mov);
+        this.pushViewerAngles();
     }
 
     async sendCartesian() {
         // Use current angles as hints
         await this.robotService.moveCartesian({ x: this.x, y: this.y, z: this.z }, {
-            m1: this.m1, m2: this.m2, m3: this.m3, m4: this.m4, c: this.magnet ? 'C:1' : 'C:0'
+            m1: this.m1, m2: this.m2, m3: this.m3, c: this.magnet ? 'C:1' : 'C:0'
         });
         // Updating sliders to reflect new position would require return value from moveCartesian to be stored/returned
         // For now, let's assume valid move
+        this.pushViewerAngles();
     }
 
     async refreshSequences() {
@@ -86,17 +88,35 @@ export class DashboardComponent implements OnInit {
         // User asked for "Simple interface to manage movements".
         // Live control might be jerky without debouncing.
         // Let's stick to "Move" button for now, or use (change) event which fires on release.
-        this.sendManual();
+        void this.sendManual();
     }
 
     async home(axis: string) {
         await this.robotService.home(axis);
         // Reset sliders if successful (optimistic UI)
         if (axis === 'all') {
-            this.m1 = 0; this.m2 = 0; this.m3 = 0; this.m4 = 0;
+            this.m1 = 0; this.m2 = 0; this.m3 = 0;
         } else if (axis === '1') this.m1 = 0;
         else if (axis === '2') this.m2 = 0;
         else if (axis === '3') this.m3 = 0;
-        else if (axis === '4') this.m4 = 0;
+        this.pushViewerAngles();
+    }
+
+    onViewerLoaded() {
+        this.pushViewerAngles();
+    }
+
+    private pushViewerAngles() {
+        const win = this.viewerFrame?.nativeElement?.contentWindow;
+        if (!win) {
+            return;
+        }
+        win.postMessage({
+            type: 'setAngles',
+            m1: this.m1,
+            m2: this.m2,
+            m3: this.m3,
+            m4: -this.m2
+        }, window.location.origin);
     }
 }

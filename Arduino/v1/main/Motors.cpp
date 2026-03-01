@@ -159,6 +159,12 @@ void handleMotors()
 {
   // Aggiorna stato homing non-bloccante prima di gestire i motori normali
   homingUpdate();
+  // Durante homing non-bloccante non eseguire altra logica motori:
+  // checkMotor() sullo stesso asse può interferire con runSpeed()/backoff.
+  if (homingInProgress)
+  {
+    return;
+  }
 
   if (movingCoordinated)
   {
@@ -404,6 +410,7 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
   }
 
   // Attiva lo stato; l'azione procederà in homingUpdate() chiamata da handleMotors()
+  movingCoordinated = false;
   homingActiveArr[motorIndex] = true;
   homingPhase[motorIndex] = H_SEEK;
   homingInProgress = true;
