@@ -56,7 +56,7 @@
     <div class="line"><label>M4</label><input id="m4" type="range" min="0" max="360" step="1" value="0"><span id="m4v">0</span></div>
     <div class="row">
       <label style="display:flex;align-items:center;gap:6px;">
-        <input id="m4Coupled" type="checkbox" checked>
+        <input id="m4Coupled" type="checkbox">
         M4 follows M2 (invert)
       </label>
     </div>
@@ -100,14 +100,15 @@
     let nodeMap = new Map();
     const bases = new Map();
     const mapping = {
-      m1: { node: null, axis: 'y', sign: 1 },
-      m2: { node: null, axis: 'y', sign: 1 },
-      m3: { node: null, axis: 'y', sign: 1 },
-      m4: { node: null, axis: 'y', sign: 1 }
+      m1: { node: 'J_Shoulder', axis: 'y', sign: 1 },
+      m2: { node: 'J_Elbow', axis: 'z', sign: 1 },
+      m3: { node: 'J_Wrist', axis: 'z', sign: -1 },
+      m4: { node: 'Scene', axis: 'y', sign: 1 }
     };
-    const storageKey = 'robotic_arm_viewer_mapping_v1';
-    let m4Coupled = true;
-    let liveSyncEnabled = true;
+    const storageKey = 'robotic_arm_viewer_mapping_v2';
+    let m4Coupled = false;
+    const query = new URLSearchParams(window.location.search);
+    let liveSyncEnabled = query.get('liveSync') === '1';
     let lastLiveTs = '';
 
     function getMotorValue(m) { return Number(sliders[m].value || 0); }
@@ -256,10 +257,10 @@
       if (names.length === 0) return;
 
       const defaults = {
-        m1: { node: 'mesh_5', axis: 'y', sign: 1 },
-        m2: { node: 'mesh_5', axis: 'z', sign: 1 },
-        m3: { node: 'mesh_6', axis: 'z', sign: 1 },
-        m4: { node: 'mesh_5', axis: 'y', sign: 1 }
+        m1: { node: 'J_Shoulder', axis: 'y', sign: 1 },
+        m2: { node: 'J_Elbow', axis: 'z', sign: 1 },
+        m3: { node: 'J_Wrist', axis: 'z', sign: -1 },
+        m4: { node: 'Scene', axis: 'y', sign: 1 }
       };
 
       for (const m of ['m1', 'm2', 'm3', 'm4']) {
@@ -378,6 +379,8 @@
           }
         );
 
+        let previewRafId = 0;
+
         // API globale per integrazione da client C#/WebView
         window.setAngles = (m1, m2, m3, m4) => {
           if (Number.isFinite(m1)) { sliders.m1.value = String(m1); labels.m1.textContent = String(Math.round(m1)); }
@@ -387,14 +390,60 @@
           applyAll();
         };
 
+        window.previewAngles = (m1, m2, m3, m4, durationMs = 900) => {
+          const from = {
+            m1: Number(sliders.m1.value || 0),
+            m2: Number(sliders.m2.value || 0),
+            m3: Number(sliders.m3.value || 0),
+            m4: Number(sliders.m4.value || 0)
+          };
+          const to = {
+            m1: Number.isFinite(m1) ? m1 : from.m1,
+            m2: Number.isFinite(m2) ? m2 : from.m2,
+            m3: Number.isFinite(m3) ? m3 : from.m3,
+            m4: Number.isFinite(m4) ? m4 : from.m4
+          };
+
+          if (previewRafId) cancelAnimationFrame(previewRafId);
+          const start = performance.now();
+          const dur = Math.max(120, Number(durationMs) || 900);
+
+          const step = (now) => {
+            const t = Math.min(1, (now - start) / dur);
+            const eased = 1 - Math.pow(1 - t, 3);
+
+            const v1 = from.m1 + (to.m1 - from.m1) * eased;
+            const v2 = from.m2 + (to.m2 - from.m2) * eased;
+            const v3 = from.m3 + (to.m3 - from.m3) * eased;
+            const v4 = from.m4 + (to.m4 - from.m4) * eased;
+
+            sliders.m1.value = String(v1); labels.m1.textContent = String(Math.round(v1));
+            sliders.m2.value = String(v2); labels.m2.textContent = String(Math.round(v2));
+            sliders.m3.value = String(v3); labels.m3.textContent = String(Math.round(v3));
+            if (!m4Coupled) { sliders.m4.value = String(v4); labels.m4.textContent = String(Math.round(v4)); }
+
+            applyAll();
+            if (t < 1) previewRafId = requestAnimationFrame(step);
+          };
+
+          previewRafId = requestAnimationFrame(step);
+        };
+
         window.addEventListener('message', (event) => {
           if (event.origin !== window.location.origin) return;
           const payload = event.data || {};
-          if (payload.type !== 'setAngles') return;
-          window.setAngles(payload.m1, payload.m2, payload.m3, payload.m4);
+          if (payload.type === 'setAngles') {
+            window.setAngles(payload.m1, payload.m2, payload.m3, payload.m4);
+            return;
+          }
+          if (payload.type === 'previewAngles') {
+            window.previewAngles(payload.m1, payload.m2, payload.m3, payload.m4, payload.durationMs);
+          }
         });
 
-        setInterval(pollLiveAngles, 180);
+        if (liveSyncEnabled) {
+          setInterval(pollLiveAngles, 180);
+        }
 
         window.addEventListener('resize', () => {
           camera.aspect = window.innerWidth / window.innerHeight;

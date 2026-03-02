@@ -1,7 +1,7 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RobotService, Movimento, PositionSet } from '../../services/robot.service';
+import { Movimento, RobotConfiguration, RobotService, PositionSet, SerialLogEntry } from '../../services/robot.service';
 
 @Component({
     selector: 'app-dashboard',
@@ -10,7 +10,7 @@ import { RobotService, Movimento, PositionSet } from '../../services/robot.servi
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.css']
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('viewerFrame') viewerFrame?: ElementRef<HTMLIFrameElement>;
 
     // Connection
@@ -18,28 +18,48 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     selectedPort: string = 'COM5';
 
     // Manual Control
-    m1: number = 90;
-    m2: number = 90;
-    m3: number = 90;
+    m1: number = 0;
+    m2: number = 0;
+    m3: number = 0;
     magnet: boolean = false;
-
-    // Cartesian Control
-    x: number = 20;
-    y: number = 0;
-    z: number = 10;
+    hasPendingManual: boolean = false;
+    isExecutingManual: boolean = false;
 
     // Sequences
     sequences: PositionSet[] = [];
+    draftSequenceName: string = 'Nuovo Set';
+    draftMovements: Movimento[] = [];
+    loopSequenceId: number | null = null;
+    isLoopRunning: boolean = false;
+    config: RobotConfiguration = {
+        passiPerGiro: 200,
+        microstep: 4,
+        maxSpeed: 5000,
+        maxAccel: 2000
+    };
+    logs: SerialLogEntry[] = [];
+    consoleCommand = '';
+    private logsTimer: ReturnType<typeof setInterval> | null = null;
 
     constructor(public robotService: RobotService) { }
 
     async ngOnInit() {
         this.refreshPorts();
         this.refreshSequences();
+        await this.loadConfig();
+        await this.refreshLogs();
+        this.logsTimer = setInterval(() => { void this.refreshLogs(); }, 700);
     }
 
     ngAfterViewInit(): void {
         this.pushViewerAngles();
+    }
+
+    ngOnDestroy(): void {
+        if (this.logsTimer) {
+            clearInterval(this.logsTimer);
+            this.logsTimer = null;
+        }
     }
 
     async refreshPorts() {
@@ -51,27 +71,28 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
     async connect() {
         await this.robotService.connect(this.selectedPort);
+        await this.loadConfig();
+        await this.refreshLogs();
     }
 
-    async sendManual() {
-        const mov: Movimento = {
-            m1: this.m1,
-            m2: this.m2,
-            m3: this.m3,
-            c: this.magnet ? 'C:1' : 'C:0'
-        };
-        await this.robotService.moveRaw(mov);
-        this.pushViewerAngles();
+    async playManual() {
+        if (this.isExecutingManual) return;
+        this.isExecutingManual = true;
+        try {
+            await this.robotService.moveManualExec(this.m1, this.m2, this.m3, 20000);
+            this.hasPendingManual = false;
+            this.pushViewerAngles();
+            await this.refreshLogs();
+        } catch (err) {
+            console.error(err);
+            await this.refreshLogs();
+        } finally {
+            this.isExecutingManual = false;
+        }
     }
 
-    async sendCartesian() {
-        // Use current angles as hints
-        await this.robotService.moveCartesian({ x: this.x, y: this.y, z: this.z }, {
-            m1: this.m1, m2: this.m2, m3: this.m3, c: this.magnet ? 'C:1' : 'C:0'
-        });
-        // Updating sliders to reflect new position would require return value from moveCartesian to be stored/returned
-        // For now, let's assume valid move
-        this.pushViewerAngles();
+    simulateMove() {
+        this.previewViewerAngles();
     }
 
     async refreshSequences() {
@@ -79,16 +100,78 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     }
 
     async runSequence(id: number) {
+        if (this.isLoopRunning) return;
         await this.robotService.runSequence(id);
+        await this.refreshLogs();
     }
 
-    // Helper to update sliders live? maybe on mouseup to avoid flooding serial
+    addCurrentPositionToDraft() {
+        this.draftMovements.push({
+            m1: Math.round(this.m1),
+            m2: Math.round(this.m2),
+            m3: Math.round(this.m3),
+            c: this.magnet ? 'C:1' : 'C:0'
+        });
+    }
+
+    removeDraftMovement(index: number) {
+        this.draftMovements.splice(index, 1);
+    }
+
+    clearDraftMovements() {
+        this.draftMovements = [];
+    }
+
+    async saveDraftSequence() {
+        const name = this.draftSequenceName.trim();
+        if (!name || this.draftMovements.length === 0) {
+            return;
+        }
+        await this.robotService.saveSequence({
+            id: 0,
+            name,
+            movements: [...this.draftMovements]
+        });
+        this.clearDraftMovements();
+        await this.refreshSequences();
+    }
+
+    async toggleSequenceLoop(id: number) {
+        if (this.isLoopRunning && this.loopSequenceId === id) {
+            this.isLoopRunning = false;
+            this.loopSequenceId = null;
+            return;
+        }
+
+        if (this.isLoopRunning) {
+            return;
+        }
+
+        this.isLoopRunning = true;
+        this.loopSequenceId = id;
+        try {
+            while (this.isLoopRunning && this.loopSequenceId === id) {
+                await this.robotService.runSequence(id);
+                await this.refreshLogs();
+                await this.delay(150);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            this.isLoopRunning = false;
+            this.loopSequenceId = null;
+        }
+    }
+
     onSliderChange() {
-        // Debounce or just wait for button?
-        // User asked for "Simple interface to manage movements".
-        // Live control might be jerky without debouncing.
-        // Let's stick to "Move" button for now, or use (change) event which fires on release.
-        void this.sendManual();
+        this.hasPendingManual = true;
+    }
+
+    async emergencyStop() {
+        this.isLoopRunning = false;
+        this.loopSequenceId = null;
+        await this.robotService.sendSerial('EMERGENCY_STOP');
+        await this.refreshLogs();
     }
 
     async home(axis: string) {
@@ -99,11 +182,55 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         } else if (axis === '1') this.m1 = 0;
         else if (axis === '2') this.m2 = 0;
         else if (axis === '3') this.m3 = 0;
+        this.hasPendingManual = false;
         this.pushViewerAngles();
+    }
+
+    async loadConfig() {
+        this.config = await this.robotService.getConfig();
+    }
+
+    async saveConfig() {
+        await this.robotService.saveConfig(this.config);
+        await this.refreshLogs();
+    }
+
+    async refreshLogs() {
+        this.logs = await this.robotService.getLogs();
+    }
+
+    async clearLogs() {
+        await this.robotService.clearLogs();
+        this.logs = [];
+    }
+
+    async sendConsoleCommand() {
+        const cmd = this.consoleCommand.trim();
+        if (!cmd) {
+            return;
+        }
+        await this.robotService.sendSerial(cmd);
+        this.consoleCommand = '';
+        await this.refreshLogs();
     }
 
     onViewerLoaded() {
         this.pushViewerAngles();
+    }
+
+    private previewViewerAngles(durationMs: number = 900) {
+        const win = this.viewerFrame?.nativeElement?.contentWindow;
+        if (!win) {
+            return;
+        }
+        win.postMessage({
+            type: 'previewAngles',
+            m1: this.m1,
+            m2: this.m2,
+            m3: this.m3,
+            m4: -this.m2,
+            durationMs
+        }, window.location.origin);
     }
 
     private pushViewerAngles() {
@@ -118,5 +245,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             m3: this.m3,
             m4: -this.m2
         }, window.location.origin);
+    }
+
+    private delay(ms: number) {
+        return new Promise<void>((resolve) => setTimeout(resolve, ms));
     }
 }

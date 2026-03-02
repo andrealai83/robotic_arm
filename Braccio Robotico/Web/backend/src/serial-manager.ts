@@ -4,6 +4,7 @@ import { ReadlineParser } from '@serialport/parser-readline';
 export class SerialManager {
     private port: SerialPort | null = null;
     private parser: ReadlineParser | null = null;
+    private readonly listeners = new Set<(data: string) => void>();
 
     // Event callback
     public onDataReceived: ((data: string) => void) | null = null;
@@ -26,6 +27,9 @@ export class SerialManager {
                 // console.log('Serial RX:', trimmed); 
                 if (this.onDataReceived) {
                     this.onDataReceived(trimmed);
+                }
+                for (const listener of this.listeners) {
+                    listener(trimmed);
                 }
             });
 
@@ -54,6 +58,30 @@ export class SerialManager {
             });
         } else {
             console.warn('Serial port not open, cannot write:', data);
+        }
+    }
+
+    public isOpen(): boolean {
+        return !!this.port?.isOpen;
+    }
+
+    public addDataListener(listener: (data: string) => void): void {
+        this.listeners.add(listener);
+    }
+
+    public removeDataListener(listener: (data: string) => void): void {
+        this.listeners.delete(listener);
+    }
+
+    public clearBuffers(): void {
+        if (!this.port || !this.port.isOpen) {
+            return;
+        }
+        try {
+            this.port.flush();
+            this.port.drain();
+        } catch {
+            // best effort
         }
     }
 

@@ -14,6 +14,19 @@ export interface PositionSet {
     movements: Movimento[];
 }
 
+export interface RobotConfiguration {
+    passiPerGiro: number;
+    microstep: number;
+    maxSpeed: number;
+    maxAccel: number;
+}
+
+export interface SerialLogEntry {
+    ts: string;
+    dir: 'RX' | 'TX' | 'SYS';
+    message: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -59,6 +72,24 @@ export class RobotService {
         });
     }
 
+    async moveManualExec(m1: number, m2: number, m3: number, timeoutMs: number = 20000): Promise<void> {
+        const res = await fetch(`${this.apiUrl}/move/manual-exec`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ m1, m2, m3, timeoutMs })
+        });
+        if (!res.ok) {
+            let msg = `Manual exec failed (${res.status})`;
+            try {
+                const body = await res.json();
+                if (body?.error) msg = body.error;
+            } catch {
+                // ignore parse errors and keep default message
+            }
+            throw new Error(msg);
+        }
+    }
+
     async moveCartesian(target: { x: number, y: number, z: number }, current?: Movimento): Promise<void> {
         await fetch(`${this.apiUrl}/move/cartesian`, {
             method: 'POST',
@@ -81,10 +112,50 @@ export class RobotService {
     }
 
     async runSequence(id: number): Promise<void> {
-        await fetch(`${this.apiUrl}/sequence/run/${id}`, { method: 'POST' });
+        const res = await fetch(`${this.apiUrl}/sequence/run-sync/${id}`, { method: 'POST' });
+        if (!res.ok) {
+            let msg = `Run sequence failed (${res.status})`;
+            try {
+                const body = await res.json();
+                if (body?.error) msg = body.error;
+            } catch {
+                // keep fallback message
+            }
+            throw new Error(msg);
+        }
     }
 
     async home(axis: string): Promise<void> {
         await fetch(`${this.apiUrl}/home/${axis}`, { method: 'POST' });
+    }
+
+    async getConfig(): Promise<RobotConfiguration> {
+        const res = await fetch(`${this.apiUrl}/config`);
+        return res.json();
+    }
+
+    async saveConfig(config: RobotConfiguration): Promise<void> {
+        await fetch(`${this.apiUrl}/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+    }
+
+    async getLogs(): Promise<SerialLogEntry[]> {
+        const res = await fetch(`${this.apiUrl}/logs`);
+        return res.json();
+    }
+
+    async clearLogs(): Promise<void> {
+        await fetch(`${this.apiUrl}/logs/clear`, { method: 'POST' });
+    }
+
+    async sendSerial(command: string): Promise<void> {
+        await fetch(`${this.apiUrl}/serial/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command })
+        });
     }
 }

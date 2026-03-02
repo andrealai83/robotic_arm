@@ -33,8 +33,10 @@ body {
 
 .container {
   padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .card {
@@ -120,12 +122,20 @@ input[type=number] {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
+  align-items: start;
 }
 
-@media(min-width: 768px) {
+@media(min-width: 1024px) {
   .grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(420px, 1fr) minmax(620px, 1.6fr);
   }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-width: 0;
 }
 
 .row {
