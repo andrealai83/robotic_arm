@@ -5,6 +5,9 @@ export interface Movimento {
     m2: number;
     m3: number;
     m4?: number;
+    m5?: number;
+    m6?: number;
+    grip?: string;
     c: string;
 }
 
@@ -25,6 +28,14 @@ export interface SerialLogEntry {
     ts: string;
     dir: 'RX' | 'TX' | 'SYS';
     message: string;
+}
+
+export interface EndstopState {
+    e1: boolean | null;
+    e2: boolean | null;
+    e3: boolean | null;
+    e4: boolean | null;
+    updatedAt: string | null;
 }
 
 @Injectable({
@@ -72,11 +83,19 @@ export class RobotService {
         });
     }
 
-    async moveManualExec(m1: number, m2: number, m3: number, timeoutMs: number = 20000): Promise<void> {
+    async moveManualExec(
+        m1: number,
+        m2: number,
+        m3: number,
+        m5: number,
+        m6: number,
+        grip: string,
+        timeoutMs: number = 20000
+    ): Promise<void> {
         const res = await fetch(`${this.apiUrl}/move/manual-exec`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ m1, m2, m3, timeoutMs })
+            body: JSON.stringify({ m1, m2, m3, m5, m6, grip, timeoutMs })
         });
         if (!res.ok) {
             let msg = `Manual exec failed (${res.status})`;
@@ -149,6 +168,10 @@ export class RobotService {
 
     async clearLogs(): Promise<void> {
         await fetch(`${this.apiUrl}/logs/clear`, { method: 'POST' });
+    }
+
+    async setEndstopTelemetry(enabled: boolean): Promise<void> {
+        await this.sendSerial(enabled ? 'TE:1' : 'TE:0');
     }
 
     async sendSerial(command: string): Promise<void> {

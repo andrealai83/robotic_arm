@@ -19,6 +19,7 @@
       background: rgba(15, 18, 24, 0.86); border: 1px solid #2b3442; border-radius: 10px;
       padding: 10px 12px; font-size: 12px;
       backdrop-filter: blur(3px);
+      display: none;
     }
     .ok { color: #7ee787; }
     .err { color: #ff7b72; }
@@ -30,6 +31,12 @@
       font-size: 12px; padding: 4px 6px;
     }
     button { cursor: pointer; }
+    #showHideConfig {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 30;
+    }
     pre {
       margin: 8px 0 0; background: #0b111a; border: 1px solid #1f2a3a; border-radius: 8px;
       padding: 8px; max-height: 220px; overflow: auto; white-space: pre-wrap;
@@ -45,8 +52,10 @@
     <div>Mouse: rotate | Wheel: zoom | Right button: pan</div>
     <div id="angleEcho" style="margin-top:6px;opacity:.9">Angles: M1=0 M2=0 M3=0 M4=0</div>
   </div>
-
-  <div class="debug">
+ 
+  <button id="showHideConfig">Show/Hide Config</button>
+ 
+      <div class="debug">
     <div><strong>Debug Joint Mapping</strong></div>
     <div style="opacity:.85">Muovi slider, scegli nodo/asse/segno per ogni motore.</div>
 
@@ -75,6 +84,8 @@
     <div style="margin-top:10px"><strong>Model Nodes</strong></div>
     <pre id="nodeList">(loading...)</pre>
   </div>
+  
+
 
   <div id="app"></div>
 
@@ -111,6 +122,9 @@
     let liveSyncEnabled = query.get('liveSync') === '1';
     let lastLiveTs = '';
 
+    const debugEl = document.querySelector('.debug');
+    let shownConfig = getComputedStyle(debugEl).display !== 'none';
+
     function getMotorValue(m) { return Number(sliders[m].value || 0); }
 
     function updateEcho() {
@@ -129,6 +143,22 @@
       const rad = (deg * cfg.sign) * Math.PI / 180;
       n.rotation[cfg.axis] = b[cfg.axis] + rad;
     }
+ 
+    document.getElementById('showHideConfig').addEventListener('click', () => {
+      for (const m of ['m1','m2','m3','m4']) {
+        sliders[m].value = '0';
+        labels[m].textContent = '0';
+      }
+      applyAll();
+      toggleConfig()
+    });
+
+
+    function toggleConfig(){
+      shownConfig = !shownConfig;
+      debugEl.style.display = shownConfig ? 'block' : 'none';
+    }
+
 
     function applyAll() {
       const effectiveM4 = m4Coupled ? -getMotorValue('m2') : getMotorValue('m4');

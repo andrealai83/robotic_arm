@@ -3,36 +3,54 @@ import cors from 'cors';
 import { SerialManager } from './serial-manager';
 import { Storage } from './storage';
 import { KinematicsHelper, CartesianPosition, Movimento } from './kinematics';
-import { TrajectoryInterpolator } from './trajectory';
 import { RobotConfigStore, RobotConfiguration } from './robot-config';
 
-const app = express();
-const port = 3000;
-
-app.use(cors());
-app.use(express.json());
-
-const serial = new SerialManager(); // Default COM5, can be changed via API
-const storage = new Storage();
-const robotConfigStore = new RobotConfigStore();
-let manualExecBusy = false;
-let sequenceExecBusy = false;
-
-type SerialLogEntry = { ts: string; dir: 'RX' | 'TX' | 'SYS'; message: string };
-const logBuffer: SerialLogEntry[] = [];
-const LOG_MAX = 500;
-
-const pushLog = (dir: 'RX' | 'TX' | 'SYS', message: string) => {
-    logBuffer.push({ ts: new Date().toISOString(), dir, message });
-    if (logBuffer.length > LOG_MAX) {
-        logBuffer.splice(0, logBuffer.length - LOG_MAX);
-    }
+type SerialLike = Pick<
+    SerialManager,
+    'setPath' | 'open' | 'listPorts' | 'write' | 'isOpen' | 'addDataListener' | 'removeDataListener' | 'clearBuffers'
+> & {
+    onDataReceived: ((data: string) => void) | null;
 };
 
-serial.onDataReceived = (data: string) => pushLog('RX', data);
+type StorageLike = Pick<Storage, 'getAll' | 'save' | 'delete'>;
+type RobotConfigStoreLike = Pick<RobotConfigStore, 'get' | 'set' | 'buildConfigurationCommands'>;
+type SerialLogEntry = { ts: string; dir: 'RX' | 'TX' | 'SYS'; message: string };
 
-// Serial endpoints
-app.post('/api/connect', async (req, res) => {
+interface AppDependencies {
+    serial?: SerialLike;
+    storage?: StorageLike;
+    robotConfigStore?: RobotConfigStoreLike;
+    port?: number;
+    initializeDelayMs?: number;
+}
+
+export function createApp(deps: AppDependencies = {}) {
+    const app = express();
+    const port = deps.port ?? 3000;
+    const serial = deps.serial ?? new SerialManager();
+    const storage = deps.storage ?? new Storage();
+    const robotConfigStore = deps.robotConfigStore ?? new RobotConfigStore();
+    const initializeDelayMs = deps.initializeDelayMs ?? 1500;
+    let manualExecBusy = false;
+    let sequenceExecBusy = false;
+
+    app.use(cors());
+    app.use(express.json());
+
+    const logBuffer: SerialLogEntry[] = [];
+    const LOG_MAX = 500;
+
+    const pushLog = (dir: 'RX' | 'TX' | 'SYS', message: string) => {
+        logBuffer.push({ ts: new Date().toISOString(), dir, message });
+        if (logBuffer.length > LOG_MAX) {
+            logBuffer.splice(0, logBuffer.length - LOG_MAX);
+        }
+    };
+
+    serial.onDataReceived = (data: string) => pushLog('RX', data);
+
+    // Serial endpoints
+    app.post('/api/connect', async (req, res) => {
     const { path, baudRate } = req.body;
     if (path) serial.setPath(path);
     try {
@@ -44,26 +62,26 @@ app.post('/api/connect', async (req, res) => {
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
-});
+    });
 
-app.get('/api/ports', async (req, res) => {
+    app.get('/api/ports', async (req, res) => {
     try {
         const ports = await serial.listPorts();
         res.json(ports);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
-});
+    });
 
-// Movement endpoints
-app.post('/api/move/raw', (req, res) => {
+    // Movement endpoints
+    app.post('/api/move/raw', (req, res) => {
     const mov = req.body as Movimento;
     const cmd = buildRunCommand(mov);
     sendSerial(cmd);
     res.json({ status: 'sent', command: cmd });
-});
+    });
 
-app.post('/api/move/manual-exec', async (req, res) => {
+    app.post('/api/move/manual-exec', async (req, res) => {
     if (manualExecBusy) {
         return res.status(409).json({ error: 'Manual movement already in progress' });
     }
@@ -71,15 +89,26 @@ app.post('/api/move/manual-exec', async (req, res) => {
     const m1 = Number(req.body?.m1);
     const m2 = Number(req.body?.m2);
     const m3 = Number(req.body?.m3);
+    const m5 = Number(req.body?.m5 ?? 0);
+    const m6 = Number(req.body?.m6 ?? 0);
+    const grip = normalizeGrip(req.body?.grip);
     const timeoutRaw = Number(req.body?.timeoutMs);
     const timeoutMs = Number.isFinite(timeoutRaw) ? Math.max(500, Math.min(60000, timeoutRaw)) : 20000;
 
-    if (![m1, m2, m3].every(Number.isFinite)) {
+    if (![m1, m2, m3, m5, m6].every(Number.isFinite)) {
         return res.status(400).json({ error: 'Invalid manual angles' });
     }
 
-    // Mirror desktop manual command style: M1/M3/M2 + EXEC (no M4).
-    const command = `M1:${Math.round(m1)};M3:${Math.round(m3)};M2:${Math.round(m2)};EXEC`;
+    const parts = [
+        `M1:${Math.round(m1)}`,
+        `M3:${Math.round(m3)}`,
+        `M2:${Math.round(m2)}`,
+        `M5:${Math.round(m5)}`,
+        `M6:${Math.round(m6)}`,
+        grip,
+        'EXEC'
+    ];
+    const command = parts.join(';');
 
     manualExecBusy = true;
     try {
@@ -92,13 +121,13 @@ app.post('/api/move/manual-exec', async (req, res) => {
     } finally {
         manualExecBusy = false;
     }
-});
+    });
 
-app.get('/api/config', (req, res) => {
+    app.get('/api/config', (req, res) => {
     res.json(robotConfigStore.get());
-});
+    });
 
-app.put('/api/config', async (req, res) => {
+    app.put('/api/config', async (req, res) => {
     try {
         const config = robotConfigStore.set(req.body as Partial<RobotConfiguration>);
         if (serial.isOpen()) {
@@ -108,27 +137,27 @@ app.put('/api/config', async (req, res) => {
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
-});
+    });
 
-app.get('/api/logs', (req, res) => {
+    app.get('/api/logs', (req, res) => {
     res.json(logBuffer);
-});
+    });
 
-app.post('/api/logs/clear', (req, res) => {
+    app.post('/api/logs/clear', (req, res) => {
     logBuffer.length = 0;
     res.json({ status: 'ok' });
-});
+    });
 
-app.post('/api/serial/send', (req, res) => {
+    app.post('/api/serial/send', (req, res) => {
     const command = String(req.body?.command ?? '').trim();
     if (!command) {
         return res.status(400).json({ error: 'Empty command' });
     }
     sendSerial(command.endsWith('\n') ? command : `${command}\n`);
     res.json({ status: 'sent' });
-});
+    });
 
-app.post('/api/move/cartesian', (req, res) => {
+    app.post('/api/move/cartesian', (req, res) => {
     const { x, y, z, m1, m2, m3 } = req.body;
     // m1..m3 are current angles to help IK choose nearest solution
 
@@ -144,45 +173,44 @@ app.post('/api/move/cartesian', (req, res) => {
     } else {
         res.status(400).json({ error: 'Target unreachable' });
     }
-});
+    });
 
-app.post('/api/home/:axis', (req, res) => {
-    const axis = req.params.axis; // 'all', '1', '2', '3', '4'
+    app.post('/api/home/:axis', (req, res) => {
+    const axis = req.params.axis; // 'all', '1', '2', '3', '4', '5', '6'
     let cmd = '';
 
     if (axis === 'all') cmd = 'HOME\n';
-    else if (['1', '2', '3', '4'].includes(axis)) cmd = `HOME_${axis}\n`;
+    else if (['1', '2', '3', '4', '5', '6'].includes(axis)) cmd = `HOME_${axis}\n`;
     else return res.status(400).json({ error: 'Invalid axis' });
 
     sendSerial(cmd);
     res.json({ status: 'homing', axis, command: cmd.trim() });
-});
+    });
 
-// Storage endpoints
-app.get('/api/sequences', (req, res) => {
+    // Storage endpoints
+    app.get('/api/sequences', (req, res) => {
     res.json(storage.getAll());
-});
+    });
 
-app.post('/api/sequences', (req, res) => {
+    app.post('/api/sequences', (req, res) => {
     storage.save(req.body);
     res.json({ status: 'saved' });
-});
+    });
 
-app.delete('/api/sequences/:id', (req, res) => {
+    app.delete('/api/sequences/:id', (req, res) => {
     const id = parseInt(req.params.id);
     storage.delete(id);
     res.json({ status: 'deleted' });
-});
+    });
 
-app.post('/api/sequence/run/:id', (req, res) => {
+    app.post('/api/sequence/run/:id', (req, res) => {
     const id = parseInt(req.params.id);
     const set = storage.getAll().find(s => s.id === id);
     if (!set) {
         return res.status(404).json({ error: 'Sequence not found' });
     }
 
-    // Create interpolated trajectory
-    const trajectory = TrajectoryInterpolator.InterpolateMovements(set.movements, 5);
+    const trajectory = [...set.movements];
 
     // Execute sequence (simple implementation: send all with delay?)
     // Real implementation needs feedback or simple delay.
@@ -197,9 +225,9 @@ app.post('/api/sequence/run/:id', (req, res) => {
     runSequence(trajectory, { waitReady: false, stepDelayMs: 200, stepTimeoutMs: 0 });
 
     res.json({ status: 'started', steps: trajectory.length });
-});
+    });
 
-app.post('/api/sequence/run-sync/:id', async (req, res) => {
+    app.post('/api/sequence/run-sync/:id', async (req, res) => {
     if (sequenceExecBusy) {
         return res.status(409).json({ error: 'Sequence execution already in progress' });
     }
@@ -210,10 +238,10 @@ app.post('/api/sequence/run-sync/:id', async (req, res) => {
         return res.status(404).json({ error: 'Sequence not found' });
     }
 
-    const trajectory = TrajectoryInterpolator.InterpolateMovements(set.movements, 5);
+    const trajectory = [...set.movements];
     sequenceExecBusy = true;
     try {
-        const result = await runSequence(trajectory, { waitReady: true, stepDelayMs: 0, stepTimeoutMs: 20000 });
+        const result = await runSequence(trajectory, { waitReady: true, stepDelayMs: 30, stepTimeoutMs: 20000 });
         if (!result.ok) {
             return res.status(504).json({ error: "Timeout waiting 'ready' during sequence", failedAt: result.failedAt });
         }
@@ -221,9 +249,9 @@ app.post('/api/sequence/run-sync/:id', async (req, res) => {
     } finally {
         sequenceExecBusy = false;
     }
-});
+    });
 
-async function runSequence(
+    async function runSequence(
     moves: Movimento[],
     options: { waitReady: boolean; stepDelayMs: number; stepTimeoutMs: number }
 ): Promise<{ ok: true } | { ok: false; failedAt: number }> {
@@ -238,28 +266,42 @@ async function runSequence(
             }
         } else {
             sendSerial(cmd);
-            if (options.stepDelayMs > 0) {
-                await new Promise(r => setTimeout(r, options.stepDelayMs));
-            }
+        }
+
+        if (options.stepDelayMs > 0 && i < moves.length - 1) {
+            await wait(options.stepDelayMs);
         }
     }
     return { ok: true };
-}
+    }
 
-function buildRunCommand(mov: Movimento): string {
-    return `M1:${mov.m1.toFixed(2)}\nM2:${mov.m2.toFixed(2)}\nM3:${mov.m3.toFixed(2)}\n${mov.c}\nRUN\n`;
-}
+    function buildRunCommand(mov: Movimento): string {
+    const c = (mov.c && mov.c.trim()) ? mov.c.trim() : 'C:0';
+    const grip = normalizeGrip(mov.grip);
+    const m5 = typeof mov.m5 === 'number' && Number.isFinite(mov.m5) ? mov.m5 : 0;
+    const m6 = typeof mov.m6 === 'number' && Number.isFinite(mov.m6) ? mov.m6 : 0;
+    // Single-line batch avoids parser interleaving between loop cycles on Arduino.
+    return `M1:${mov.m1.toFixed(2)};M2:${mov.m2.toFixed(2)};M3:${mov.m3.toFixed(2)};M5:${m5.toFixed(2)};M6:${m6.toFixed(2)};${grip};${c};RUN\n`;
+    }
 
-function sendSerial(data: string): void {
+    function normalizeGrip(value: unknown): string {
+    const grip = String(value ?? '').trim().toUpperCase();
+    if (/^GRIP:\d+$/.test(grip)) {
+        return grip;
+    }
+    return 'GRIP:0';
+    }
+
+    function sendSerial(data: string): void {
     serial.write(data);
     pushLog('TX', data.replace(/\r/g, '\\r').replace(/\n/g, '\\n'));
-}
+    }
 
-function wait(ms: number): Promise<void> {
+    function wait(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
-}
+    }
 
-async function waitForLine(predicate: (line: string) => boolean, timeoutMs: number): Promise<string | null> {
+    async function waitForLine(predicate: (line: string) => boolean, timeoutMs: number): Promise<string | null> {
     return new Promise<string | null>((resolve) => {
         const timeout = setTimeout(() => {
             serial.removeDataListener(onLine);
@@ -275,21 +317,37 @@ async function waitForLine(predicate: (line: string) => boolean, timeoutMs: numb
 
         serial.addDataListener(onLine);
     });
-}
+    }
 
-async function sendAndWaitOk(command: string, timeoutMs: number): Promise<boolean> {
-    sendSerial(`${command}\n`);
-    const line = await waitForLine((msg) => msg === 'ok', timeoutMs);
-    return line !== null;
-}
+    async function sendAndWaitOk(command: string, timeoutMs: number): Promise<boolean> {
+    return sendAndWaitLine(`${command}\n`, (msg) => msg === 'ok', timeoutMs);
+    }
 
-async function sendAndWaitReady(command: string, timeoutMs: number): Promise<boolean> {
-    sendSerial(`${command}\n`);
-    const line = await waitForLine((msg) => msg === 'ready', timeoutMs);
-    return line !== null;
-}
+    async function sendAndWaitReady(command: string, timeoutMs: number): Promise<boolean> {
+    return sendAndWaitLine(`${command}\n`, (msg) => msg === 'ready', timeoutMs);
+    }
 
-async function applyConfiguration(config: RobotConfiguration): Promise<void> {
+    async function sendAndWaitLine(data: string, predicate: (line: string) => boolean, timeoutMs: number): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+        const timeout = setTimeout(() => {
+            serial.removeDataListener(onLine);
+            resolve(false);
+        }, timeoutMs);
+
+        const onLine = (line: string) => {
+            if (!predicate(line)) return;
+            clearTimeout(timeout);
+            serial.removeDataListener(onLine);
+            resolve(true);
+        };
+
+        // Attach listener before sending to avoid missing very fast ACKs.
+        serial.addDataListener(onLine);
+        sendSerial(data);
+    });
+    }
+
+    async function applyConfiguration(config: RobotConfiguration): Promise<void> {
     const commands = robotConfigStore.buildConfigurationCommands(config);
     for (const cfg of commands) {
         let ok = false;
@@ -303,15 +361,21 @@ async function applyConfiguration(config: RobotConfiguration): Promise<void> {
             throw new Error(`Timeout ack su: ${cfg}`);
         }
     }
-}
+    }
 
-async function initializeDevice(config: RobotConfiguration): Promise<void> {
-    await wait(1500);
+    async function initializeDevice(config: RobotConfiguration): Promise<void> {
+    await wait(initializeDelayMs);
     serial.clearBuffers();
     await waitForLine((line) => line === 'Sistema pronto.', 8000);
     await applyConfiguration(config);
+    }
+
+    return { app, port };
 }
 
-app.listen(port, () => {
-    console.log(`Backend listening at http://localhost:${port}`);
-});
+if (require.main === module) {
+    const { app, port } = createApp();
+    app.listen(port, () => {
+        console.log(`Backend listening at http://localhost:${port}`);
+    });
+}

@@ -8,6 +8,9 @@ export interface Movimento {
     m2: number;
     m3: number;
     m4?: number;
+    m5?: number;
+    m6?: number;
+    grip?: string;
     c: string;
 }
 
@@ -86,6 +89,9 @@ export class KinematicsHelper {
             m2: m2,
             m3: m3,
             m4: m4,
+            m5: currentAngles?.m5 ?? 0,
+            m6: currentAngles?.m6 ?? 0,
+            grip: currentAngles?.grip ?? "GRIP:0",
             c: currentAngles ? currentAngles.c : "C:0"
         };
     }

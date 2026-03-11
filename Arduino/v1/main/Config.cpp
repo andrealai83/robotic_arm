@@ -1,17 +1,24 @@
 #include "Config.h"
 
 // PIN motori
-int ENA4 = 13, DIR4 = 12, PUL4 = 11;
-int ENA1 = 10, DIR1 = 9,  PUL1 = 8;
-int ENA2 = 7,  DIR2 = 6,  PUL2 = 5;
-int ENA3 = 4,  DIR3 = 3,  PUL3 = 2;
-int ENAP = 19, DIRP = 21, PULP = 20;
+//int ENA4 = 13, DIR4 = 12, PUL4 = 11; 
+//int ENA1 = 10, DIR1 = 9,  PUL1 = 8; 
+//int ENA2 = 7,  DIR2 = 6,  PUL2 = 5; 
+//int ENA3 = 4,  DIR3 = 3,  PUL3 = 2;
+
+int ENA1 = 13, DIR1 = 12, PUL1 = 11; 
+int ENA3 = 7, DIR3 = 6,  PUL3 = 5; 
+int ENA4 = 10, DIR4 = 9,  PUL4 = 8; 
+int ENA2 = 4,  DIR2 = 3,  PUL2 = 2;
+
+int ENA5 = 16, DIR5 = 17, PUL5 = 14;
+int ENA6 = 19, DIR6 = 20, PUL6 = 21;
 
 // Stato globale
 bool saveRequest = false;
 bool eseguiMovimento = false;
 bool calamitaAttiva = false;
-int target1 = 0, target2 = 0, target3 = 0, target4 = 0, targetP = 0;
+int target1 = 0, target2 = 0, target3 = 0, target4 = 0, target5 = 0, target6 = 0;
 int ENDSTOP_ENABLED = 1;
 
 // Parametri motori
@@ -37,6 +44,7 @@ void setupPins() {
   pinMode(ENDSTOP_2_PIN, INPUT_PULLUP);
   pinMode(ENDSTOP_3_PIN, INPUT_PULLUP);
   pinMode(ENDSTOP_4_PIN, INPUT_PULLUP);
+  pinMode(ENDSTOP_P_PIN, INPUT_PULLUP);
   pinMode(BTN_HOMING_PIN, INPUT_PULLUP);
   pinMode(BTN_STOP_PIN,   INPUT_PULLUP);
 }

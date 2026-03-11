@@ -57,7 +57,8 @@ static inline bool syncM4FromM2(bool moveNow) {
 
   target4 = desiredM4;
   if (moveNow) {
-    setTarget(motore4, (int)target4);
+    setCoupledTargetM2M4(target2);
+    motore2Completato = false;
     motore4Completato = false;
   }
   return true;
@@ -125,7 +126,7 @@ void joystickVelocityUpdate() {
             if (nt != target1) { setTarget(motore1, nt); motore1Completato=false; target1=nt; changed=true; } }
   if (s2) { long nt = clampL(target2 + s2, LIM_MIN_M2, LIM_MAX_M2);
             if (nt != target2) {
-              setTarget(motore2, nt); motore2Completato=false; target2=nt; changed=true;
+              target2=nt; motore2Completato=false; changed=true;
               if (syncM4FromM2(true)) changed = true;
             } }
   if (s3) { long nt = clampL(target3 + s3, LIM_MIN_M3, LIM_MAX_M3);
@@ -144,13 +145,15 @@ void onBtn6()
 void onBtn7()
 {
   extern bool eseguiMovimento;
-  extern bool motore1Completato, motore2Completato, motore3Completato, motore4Completato;
-  extern AccelStepper motore1, motore2, motore3, motore4;
+  extern bool motore1Completato, motore2Completato, motore3Completato, motore4Completato, motore5Completato, motore6Completato;
+  extern AccelStepper motore1, motore2, motore3, motore4, motore5, motore6;
 
   motore1.stop(); motore1.setCurrentPosition(motore1.currentPosition()); motore1Completato = true;
   motore2.stop(); motore2.setCurrentPosition(motore2.currentPosition()); motore2Completato = true;
   motore3.stop(); motore3.setCurrentPosition(motore3.currentPosition()); motore3Completato = true;
   motore4.stop(); motore4.setCurrentPosition(motore4.currentPosition()); motore4Completato = true;
+  motore5.stop(); motore5.setCurrentPosition(motore5.currentPosition()); motore5Completato = true;
+  motore6.stop(); motore6.setCurrentPosition(motore6.currentPosition()); motore6Completato = true;
 
   eseguiMovimento = false;
 
@@ -234,7 +237,6 @@ void processToken(const String &cmd)
     int v = atoi(cmd.c_str() + 3);
     showMoveMsg("M2:", v);
     target2 = v;
-    setTarget(motore2, v);
     motore2Completato = false;
     syncM4FromM2(true);
     return;
@@ -249,6 +251,22 @@ void processToken(const String &cmd)
   }
   if (cmd.startsWith(F("M4:"))) {
     Serial.println(F("M4 indipendente disabilitato: usare M2"));
+    return;
+  }
+  if (cmd.startsWith(F("M5:"))) {
+    int v = atoi(cmd.c_str() + 3);
+    showMoveMsg("M5:", v);
+    target5 = v;
+    setTarget(motore5, v);
+    motore5Completato = false;
+    return;
+  }
+  if (cmd.startsWith(F("M6:"))) {
+    int v = atoi(cmd.c_str() + 3);
+    showMoveMsg("M6:", v);
+    target6 = v;
+    setTarget(motore6, v);
+    motore6Completato = false;
     return;
   }
   if (cmd.startsWith(F("GRIP:"))) {
@@ -287,6 +305,8 @@ void processToken(const String &cmd)
     homingMotor(motore1, ENDSTOP_1_PIN, 0);
     homingMotor(motore2, ENDSTOP_2_PIN, 1);
     homingMotor(motore3, ENDSTOP_3_PIN, 2);
+    homingMotor(motore5, ENDSTOP_5_PIN, 3);
+    homingMotor(motore6, ENDSTOP_6_PIN, 4);
 
     // Homing avviato in modo non-bloccante; l'azzeramento degli encoder
     // e l'aggiornamento dei target avverranno quando ogni homing termina.
@@ -317,6 +337,21 @@ void processToken(const String &cmd)
     homingMotor(motore3, ENDSTOP_3_PIN, 2);
     encoderReset(3);  // resetta encoder dopo homing
     target3 = 0;
+    aggiornaDisplay();
+    return;
+  }
+  if (cmd == F("HOME_5")) {
+    mostraMessaggio("HOMING 5...");
+    homingMotor(motore5, ENDSTOP_5_PIN, 3);
+    encoderReset(5);  // resetta encoder dopo homing
+    target5 = 0;
+    aggiornaDisplay();
+    return;
+  }
+  if (cmd == F("HOME_6")) {
+    mostraMessaggio("HOMING 6...");
+    homingMotor(motore6, ENDSTOP_6_PIN, 4);
+    target6 = 0;
     aggiornaDisplay();
     return;
   }
@@ -374,6 +409,12 @@ void handleButtons()
       motore4.stop();
       motore4.setCurrentPosition(motore4.currentPosition());
       motore4Completato = true;
+      motore5.stop();
+      motore5.setCurrentPosition(motore5.currentPosition());
+      motore5Completato = true;
+      motore6.stop();
+      motore6.setCurrentPosition(motore6.currentPosition());
+      motore6Completato = true;
       eseguiMovimento = false;
       lastButtonTime = millis();
     }

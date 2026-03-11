@@ -23,7 +23,9 @@
     </header>
 
     <div class="grid">
+       
         <div class="column">
+            <!-- MOVIMENTI -->
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2 style="margin-top:0;">Joint Control</h2>
@@ -70,6 +72,48 @@
                         <input type="range" min="0" max="360" [(ngModel)]="m3" (input)="onSliderChange()">
                     </div>
 
+                    <div>
+                        <div class="row">
+                            <label>Wrist Rotate (M5)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <span style="color:#f59e0b">{{m5}}&deg;</span>
+                                <button (click)="home('5')"
+                                    style="padding:2px 6px; font-size:0.7rem; background:#374151; color:#9ca3af;">Home</button>
+                            </div>
+                        </div>
+                        <input type="range" min="0" max="360" [(ngModel)]="m5" (input)="onSliderChange()">
+                    </div>
+
+                    <div>
+                        <div class="row">
+                            <label>Tool Rotate (M6)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <span style="color:#14b8a6">{{m6}}&deg;</span>
+                                <button (click)="home('6')"
+                                    style="padding:2px 6px; font-size:0.7rem; background:#374151; color:#9ca3af;">Home</button>
+                            </div>
+                        </div>
+                        <input type="range" min="0" max="360" [(ngModel)]="m6" (input)="onSliderChange()">
+                    </div>
+
+                    <div class="gripper-panel">
+                        <label>Pinza</label>
+                        <div class="gripper-actions">
+                            <button
+                                (click)="setGripper(true)"
+                                [class.gripper-active]="gripOpen"
+                                class="btn-secondary">
+                                Chiudi
+                            </button>
+                            <button
+                                (click)="setGripper(false)"
+                                [class.gripper-active]="!gripOpen"
+                                class="btn-secondary">
+                                Apri
+                            </button>
+                        </div>
+                    </div>
+
                     <div
                         style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
                         <label>Magnet</label>
@@ -92,6 +136,7 @@
                 <div class="pending-note" *ngIf="hasPendingManual">Modifiche pronte: simula o premi PLAY.</div>
             </div>
 
+            <!-- CONFIGURAZIONE MOTORI -->
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
                     <h2 style="margin:0;">Motor Config</h2>
@@ -123,17 +168,50 @@
             </div>
 
             <div class="card">
+                <div class="endstop-header">
+                    <div>
+                        <h2 style="margin:0;">Test Finecorsa</h2>
+                        <div class="endstop-subtitle">
+                            Stato live dai messaggi seriali `ENDSTOP E1..E4`
+                        </div>
+                    </div>
+                    <button
+                        (click)="toggleEndstopTelemetry()"
+                        [class.btn-danger]="endstopTelemetryEnabled"
+                        class="btn-primary">
+                        {{ endstopTelemetryEnabled ? 'Ferma Test' : 'Avvia Test' }}
+                    </button>
+                </div>
+
+                <div class="endstop-grid">
+                    <div *ngFor="let item of endstopCards"
+                        class="endstop-card"
+                        [class.endstop-active]="item.value === true"
+                        [class.endstop-inactive]="item.value === false"
+                        [class.endstop-unknown]="item.value === null">
+                        <div class="endstop-label">{{ item.label }}</div>
+                        <div class="endstop-value">
+                            {{ item.value === null ? 'N/D' : (item.value ? 'PREMUTO' : 'LIBERO') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endstop-footer">
+                    <span>Telemetria: {{ endstopTelemetryEnabled ? 'attiva' : 'disattiva' }}</span>
+                    <span *ngIf="endstopState.updatedAt">Ultimo update: {{ endstopState.updatedAt | date:'HH:mm:ss' }}</span>
+                </div>
+            </div>
+
+            <!-- SEQUENZE -->
+            <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
                     <h2 style="margin:0;">Sequences</h2>
-                    <button (click)="refreshSequences()" style="background:none; color:var(--text-secondary)">Refresh</button>
+                    <button (click)="refreshSequences()"
+                        style="background:none; color:var(--text-secondary)">Refresh</button>
                 </div>
 
                 <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input
-                        type="text"
-                        [(ngModel)]="draftSequenceName"
-                        placeholder="Nome set posizioni"
-                        style="flex:1;">
+                    <input type="text" [(ngModel)]="draftSequenceName" placeholder="Nome set posizioni" style="flex:1;">
                     <button class="btn-secondary" (click)="addCurrentPositionToDraft()">Aggiungi Posizione</button>
                 </div>
 
@@ -141,7 +219,8 @@
                     <button class="btn-primary" (click)="saveDraftSequence()" [disabled]="draftMovements.length === 0">
                         Salva Set
                     </button>
-                    <button class="btn-secondary" (click)="clearDraftMovements()" [disabled]="draftMovements.length === 0">
+                    <button class="btn-secondary" (click)="clearDraftMovements()"
+                        [disabled]="draftMovements.length === 0">
                         Svuota
                     </button>
                 </div>
@@ -150,11 +229,14 @@
                     Posizioni in bozza: {{ draftMovements.length }}
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto; margin-bottom:12px;">
+                <div
+                    style="display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto; margin-bottom:12px;">
                     <div *ngFor="let mov of draftMovements; let i = index"
                         style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:6px 10px; border-radius:6px;">
-                        <span style="font-size:0.82rem;">#{{ i + 1 }} M1:{{mov.m1}} M2:{{mov.m2}} M3:{{mov.m3}} {{mov.c}}</span>
-                        <button (click)="removeDraftMovement(i)" style="background:none; color:#fca5a5; padding:2px 6px;">X</button>
+                        <span style="font-size:0.82rem;">#{{ i + 1 }} M1:{{mov.m1}} M2:{{mov.m2}} M3:{{mov.m3}} M5:{{mov.m5 ?? 0}} M6:{{mov.m6 ?? 0}}
+                            {{mov.grip ?? 'GRIP:0'}} {{mov.c}}</span>
+                        <button (click)="removeDraftMovement(i)"
+                            style="background:none; color:#fca5a5; padding:2px 6px;">X</button>
                     </div>
                 </div>
 
@@ -177,49 +259,49 @@
                     </div>
                 </div>
             </div>
-
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
-                    <h2 style="margin:0;">Serial Console</h2>
-                    <div style="display:flex; gap:8px;">
-                        <button (click)="refreshLogs()" style="background:none; color:var(--text-secondary)">Refresh</button>
-                        <button (click)="clearLogs()" style="background:none; color:#fca5a5">Clear</button>
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <input
-                        type="text"
-                        [(ngModel)]="consoleCommand"
-                        placeholder="Comando seriale (es. HOME_2, CFG:maxSpeed:5000)"
-                        style="flex:1;">
-                    <button (click)="sendConsoleCommand()" class="btn-primary">Send</button>
-                </div>
-
-                <div class="console-box">
-                    <div *ngFor="let row of logs" class="console-row">
-                        <span class="console-ts">{{ row.ts | date:'HH:mm:ss' }}</span>
-                        <span class="console-dir" [class.console-rx]="row.dir === 'RX'" [class.console-tx]="row.dir === 'TX'">{{ row.dir }}</span>
-                        <span class="console-msg">{{ row.message }}</span>
-                    </div>
-                </div>
-            </div>
+ 
         </div>
 
+        <!-- GRAFICO -->
         <div class="column">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
                     <h2 style="margin:0;">3D Viewer</h2>
                     <span style="color:var(--text-secondary); font-size:0.85rem;">Simula prima, poi PLAY</span>
                 </div>
-                <iframe
-                    #viewerFrame
-                    class="viewer-frame"
-                    src="/3d/viewer.html"
-                    title="Robotic Arm 3D Viewer"
+                <iframe #viewerFrame class="viewer-frame" src="/3d/viewer.html" title="Robotic Arm 3D Viewer"
                     (load)="onViewerLoaded()">
                 </iframe>
             </div>
+        </div>
+
+        <div class="column">
+            <!-- CONSOLE  -->
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+                    <h2 style="margin:0;">Serial Console</h2>
+                    <div style="display:flex; gap:8px;">
+                        <button (click)="refreshLogs()"
+                            style="background:none; color:var(--text-secondary)">Refresh</button>
+                        <button (click)="clearLogs()" style="background:none; color:#fca5a5">Clear</button>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <input type="text" [(ngModel)]="consoleCommand"
+                        placeholder="Comando seriale (es. HOME_2, CFG:maxSpeed:5000)" style="flex:1;">
+                    <button (click)="sendConsoleCommand()" class="btn-primary">Send</button>
+                </div>
+
+                <div class="console-box">
+                    <div *ngFor="let row of logs" class="console-row">
+                        <span class="console-ts">{{ row.ts | date:'HH:mm:ss' }}</span>
+                        <span class="console-dir" [class.console-rx]="row.dir === 'RX'"
+                            [class.console-tx]="row.dir === 'TX'">{{ row.dir }}</span>
+                        <span class="console-msg">{{ row.message }}</span>
+                    </div>
+                </div>
+            </div> 
         </div>
     </div>
 </div>
