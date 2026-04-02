@@ -2,6 +2,7 @@
 #include "Display.h"
 #include "Config.h"
 #include "Encoder.h"
+#include "PressureSensors.h"
 
 AccelStepper motore1(AccelStepper::DRIVER, PUL1, DIR1);
 AccelStepper motore2(AccelStepper::DRIVER, PUL2, DIR2);
@@ -10,6 +11,9 @@ AccelStepper motore4(AccelStepper::DRIVER, PUL4, DIR4);
 AccelStepper motore5(AccelStepper::DRIVER, PUL5, DIR5);
 AccelStepper motore6(AccelStepper::DRIVER, PUL6, DIR6);
 Servo gripper;
+static int gripperAngleDeg = 0;
+static const uint8_t GRIPPER_STEP_DEG = 1;
+static const uint8_t GRIPPER_STEP_DELAY_MS = 20;
 
 bool motore1Completato = true;
 bool motore2Completato = true;
@@ -20,6 +24,10 @@ bool motore6Completato = true;
 
 // Flag globale per indicare se siamo in movimento coordinato
 bool movingCoordinated = false;
+static bool motor6Enabled = true;
+static unsigned long motor6LastActivityMs = 0;
+static const unsigned long MOTOR6_IDLE_TIMEOUT_MS = 3000;
+static bool motor6MovedInLastRun = false;
 
 // Configurazione centralizzata degli assi reali configurabili.
 // Indice 0 = motore1, 1 = motore2, 2 = motore3, 3 = motore5, 4 = motore6
@@ -48,6 +56,7 @@ void setupMotors()
 
   setupMotor(motore5, ENA5, 3);
   setupMotor(motore6, ENA6, 4);
+  motor6LastActivityMs = millis();
 }
 
 void moveAllToDegrees(int g1, int g2, int g3, int g4, int g5, int g6)
@@ -97,6 +106,7 @@ void startCoordinatedMove()
   long dist4 = abs(delta2);
   long dist5 = abs(targetPos5 - current5);
   long dist6 = abs(targetPos6 - current6);
+  motor6MovedInLastRun = (dist6 > 0);
 
   // 3. Trova la distanza massima
   long maxDist = dist1;
@@ -115,6 +125,7 @@ void startCoordinatedMove()
   {
     // Nessun movimento necessario
     movingCoordinated = false;
+    motor6MovedInLastRun = false;
     Serial.println("ready");
     return;
   }
@@ -195,6 +206,7 @@ void handleMotors()
   // checkMotor() sullo stesso asse può interferire con runSpeed()/backoff.
   if (homingInProgress)
   {
+    updateMotor6IdleState();
     return;
   }
 
@@ -288,6 +300,10 @@ void handleMotors()
     }
 
     // Il movimento coordinato è terminato: riallinea subito i flag di stato.
+    if (motor6MovedInLastRun)
+    {
+      markMotor6Activity();
+    }
     motore1Completato = true;
     motore2Completato = true;
     motore3Completato = true;
@@ -310,6 +326,7 @@ void handleMotors()
     motore5.setAcceleration(maxAccel);
     motore6.setMaxSpeed(maxSpeed);
     motore6.setAcceleration(maxAccel);
+    motor6MovedInLastRun = false;
 
     Serial.println("ready");
   }
@@ -320,6 +337,7 @@ void handleMotors()
     checkMotor(motore2, motore2Completato, ENDSTOP_2_PIN);
     checkMotor(motore3, motore3Completato, ENDSTOP_3_PIN);
   }
+  updateMotor6IdleState();
 }
 
 void setupMotor(AccelStepper &motore, int pinENA, int motorIndex)
@@ -347,6 +365,11 @@ void setEnableAll(bool on)
   digitalWrite(ENA4, level);
   digitalWrite(ENA5, level);
   digitalWrite(ENA6, level);
+  motor6Enabled = on;
+  if (on)
+  {
+    motor6LastActivityMs = millis();
+  }
 
   encoderStreamOn = !on;
 
@@ -365,6 +388,55 @@ void setEnableAll(bool on)
   }
 }
 
+void setEnableMotor6(bool on)
+{
+  bool level = EN_ACTIVE_HIGH ? (on ? HIGH : LOW) : (on ? LOW : HIGH);
+  digitalWrite(ENA6, level);
+  motor6Enabled = on;
+  if (on)
+  {
+    motor6LastActivityMs = millis();
+  }
+}
+
+void markMotor6Activity()
+{
+  motor6LastActivityMs = millis();
+  if (motorsEnabled && !motor6Enabled)
+  {
+    setEnableMotor6(true);
+  }
+}
+
+void updateMotor6IdleState()
+{
+  if (!motorsEnabled)
+  {
+    if (motor6Enabled)
+    {
+      setEnableMotor6(false);
+    }
+    return;
+  }
+
+  if (!motor6Enabled)
+  {
+    return;
+  }
+
+  const bool motor6Busy = homingInProgress || movingCoordinated || motore6.distanceToGo() != 0 || !motore6Completato;
+  if (motor6Busy)
+  {
+    motor6LastActivityMs = millis();
+    return;
+  }
+
+  if (millis() - motor6LastActivityMs >= MOTOR6_IDLE_TIMEOUT_MS)
+  {
+    setEnableMotor6(false);
+  }
+}
+
 void setTarget(AccelStepper &motore, int targetGradi)
 {
   if (targetGradi < -360 || targetGradi > 360)
@@ -376,6 +448,8 @@ void setTarget(AccelStepper &motore, int targetGradi)
   // Inverti SOLO il movimento normale di M2/M4 (homing escluso).
   if (&motore == &motore2 || &motore == &motore4)
     targetPassi = -targetPassi;
+  if (&motore == &motore6)
+    markMotor6Activity();
   motore.moveTo(targetPassi);
 
   static unsigned long last = 0;
@@ -479,6 +553,10 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
   prevAccelArr[motorIndex] = (long)motore.acceleration();
 
   const bool coupledM2M4 = (motorIndex == 1);
+  if (motorIndex == 4)
+  {
+    markMotor6Activity();
+  }
   if (coupledM2M4)
   {
     prevMaxSpeedM4 = (long)motore4.maxSpeed();
@@ -585,6 +663,10 @@ void homingUpdate()
 
         homingActiveArr[i] = false;
         homingPhase[i] = H_DONE;
+        if (i == 4)
+        {
+          markMotor6Activity();
+        }
       }
     }
   }
@@ -595,14 +677,32 @@ void homingUpdate()
 void setupGripper()
 {
   gripper.attach(GRIPPER_PIN);
-  gripper.write(90); // Default position
+  gripperAngleDeg = 0;
+  gripper.write(gripperAngleDeg); // Default position
 }
 
 void setGripperAngle(int angle)
 {
   if (angle < 0)
     angle = 0;
-  if (angle > 180)
-    angle = 180;
-  gripper.write(angle);
+  if (angle > 90)
+    angle = 90;
+
+  if (angle == gripperAngleDeg) {
+    pressureSensorsUpdate();
+    return;
+  }
+
+  const int direction = (angle > gripperAngleDeg) ? 1 : -1;
+  while (gripperAngleDeg != angle) {
+    gripperAngleDeg += direction * GRIPPER_STEP_DEG;
+    if ((direction > 0 && gripperAngleDeg > angle) ||
+        (direction < 0 && gripperAngleDeg < angle)) {
+      gripperAngleDeg = angle;
+    }
+
+    gripper.write(gripperAngleDeg);
+    delay(GRIPPER_STEP_DELAY_MS);
+    pressureSensorsUpdate();
+  }
 }

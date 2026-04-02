@@ -38,6 +38,10 @@ class MockSerial {
         if (this.autoReady && (data.includes('EXEC') || data.includes(';RUN\n'))) {
             setTimeout(() => this.emit('ready'), 0);
         }
+
+        if (data === 'PRESS?\n') {
+            setTimeout(() => this.emit('PRESS P1:33% P2:47% MAX:47'), 0);
+        }
     }
 
     isOpen(): boolean {
@@ -212,6 +216,27 @@ describe('API endpoints', () => {
         expect(beforeClear.body[1].message).toBe('PING\\n');
         expect(clear.body).toEqual({ status: 'ok' });
         expect(afterClear.body).toEqual([]);
+    });
+
+    it('tracks grip pressure from serial feedback and refresh endpoint', async () => {
+        ctx.serial.openState = true;
+        ctx.serial.emit('GRIP A:120 P1:21% P2:18% MAX:21');
+
+        const current = await request(ctx.app).get('/api/grip-pressure');
+        const refreshed = await request(ctx.app).post('/api/grip-pressure/refresh');
+
+        expect(current.status).toBe(200);
+        expect(current.body.p1).toBe(21);
+        expect(current.body.p2).toBe(18);
+        expect(current.body.max).toBe(21);
+        expect(current.body.source).toBe('GRIP');
+
+        expect(refreshed.status).toBe(200);
+        expect(refreshed.body.p1).toBe(33);
+        expect(refreshed.body.p2).toBe(47);
+        expect(refreshed.body.max).toBe(47);
+        expect(refreshed.body.source).toBe('PRESS');
+        expect(last(ctx.serial.writes)).toBe('PRESS?\n');
     });
 
     it('validates home axis and supports wrist endpoints', async () => {

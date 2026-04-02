@@ -23,6 +23,8 @@ extern int ENA6, DIR6, PUL6;
 #define BT_STATE_PIN   A7
 #define BTN_HOMING_PIN A0
 #define BTN_STOP_PIN   A1
+#define PRESSURE_SENSOR_1_PIN A14
+#define PRESSURE_SENSOR_2_PIN A15
 
 // Stato globale semplice (usato da più moduli)
 extern bool saveRequest;

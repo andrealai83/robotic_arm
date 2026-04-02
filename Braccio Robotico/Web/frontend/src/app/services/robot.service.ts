@@ -38,6 +38,14 @@ export interface EndstopState {
     updatedAt: string | null;
 }
 
+export interface GripPressureState {
+    p1: number | null;
+    p2: number | null;
+    max: number | null;
+    updatedAt: string | null;
+    source: 'GRIP' | 'PRESS' | null;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -172,6 +180,26 @@ export class RobotService {
 
     async setEndstopTelemetry(enabled: boolean): Promise<void> {
         await this.sendSerial(enabled ? 'TE:1' : 'TE:0');
+    }
+
+    async getGripPressure(): Promise<GripPressureState> {
+        const res = await fetch(`${this.apiUrl}/grip-pressure`);
+        return res.json();
+    }
+
+    async refreshGripPressure(): Promise<GripPressureState> {
+        const res = await fetch(`${this.apiUrl}/grip-pressure/refresh`, { method: 'POST' });
+        if (!res.ok) {
+            let msg = `Grip pressure refresh failed (${res.status})`;
+            try {
+                const body = await res.json();
+                if (body?.error) msg = body.error;
+            } catch {
+                // ignore parse errors
+            }
+            throw new Error(msg);
+        }
+        return res.json();
     }
 
     async sendSerial(command: string): Promise<void> {

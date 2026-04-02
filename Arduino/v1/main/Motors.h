@@ -46,6 +46,9 @@ void setGripperAngle(int angle);
 // Nuova gestione coordinata scalata
 void startCoordinatedMove();   
 void setEnableAll(bool on);
+void setEnableMotor6(bool on);
+void markMotor6Activity();
+void updateMotor6IdleState();
 
 // Homing non-bloccante: stato e aggiornamento
 extern bool homingInProgress;

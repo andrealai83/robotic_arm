@@ -1,8 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
-// Pin encoder per i cinque motori (A10 - A14)
-#define ENCODER_PIN_MOTOR1 A14  // MOTORE 1
+// Pin encoder per i cinque motori
+#define ENCODER_PIN_MOTOR1 A5   // MOTORE 1
 #define ENCODER_PIN_MOTOR2 A10  // MOTORE 2
 #define ENCODER_PIN_MOTOR3 A13  // MOTORE 3
 #define ENCODER_PIN_MOTOR4 A12  // MOTORE 4

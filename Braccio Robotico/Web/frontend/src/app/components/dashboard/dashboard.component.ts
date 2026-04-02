@@ -1,7 +1,7 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { EndstopState, Movimento, RobotConfiguration, RobotService, PositionSet, SerialLogEntry } from '../../services/robot.service';
+import { EndstopState, GripPressureState, Movimento, RobotConfiguration, RobotService, PositionSet, SerialLogEntry } from '../../services/robot.service';
 
 @Component({
     selector: 'app-dashboard',
@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     magnet: boolean = false;
     hasPendingManual: boolean = false;
     isExecutingManual: boolean = false;
+    isExecutingGrip: boolean = false;
 
     // Sequences
     sequences: PositionSet[] = [];
@@ -50,7 +51,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         e4: null,
         updatedAt: null
     };
+    gripPressure: GripPressureState = {
+        p1: null,
+        p2: null,
+        max: null,
+        updatedAt: null,
+        source: null
+    };
     private logsTimer: ReturnType<typeof setInterval> | null = null;
+    private gripPressureTimer: ReturnType<typeof setInterval> | null = null;
     private lastViewerMoveLogKey: string | null = null;
 
     constructor(
@@ -75,6 +84,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             clearInterval(this.logsTimer);
             this.logsTimer = null;
         }
+        if (this.gripPressureTimer) {
+            clearInterval(this.gripPressureTimer);
+            this.gripPressureTimer = null;
+        }
     }
 
     async refreshPorts() {
@@ -88,6 +101,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         await this.robotService.connect(this.selectedPort);
         await this.loadConfig();
         await this.refreshLogs();
+        await this.refreshGripPressure();
+        this.startGripPressurePolling();
     }
 
     async playManual() {
@@ -106,6 +121,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             this.hasPendingManual = false;
             this.pushViewerAngles();
             await this.refreshLogs();
+            await this.refreshGripPressure();
         } catch (err) {
             console.error(err);
             await this.refreshLogs();
@@ -214,9 +230,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.pushViewerAngles();
     }
 
-    setGripper(open: boolean) {
+    async setGripper(open: boolean) {
+        if (this.isExecutingGrip) {
+            return;
+        }
+
         this.gripOpen = open;
-        this.hasPendingManual = true;
+        this.isExecutingGrip = true;
+        this.cdr.detectChanges();
+
+        try {
+            await this.robotService.sendSerial(this.currentGripCommand);
+            await this.trackGripFeedbackUntilSettled();
+            await this.refreshLogs();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            this.isExecutingGrip = false;
+            this.cdr.detectChanges();
+        }
     }
 
     async loadConfig() {
@@ -231,10 +263,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     async refreshLogs() {
         this.logs = await this.robotService.getLogs();
         if (this.isLoopRunning) {
+            this.syncGripPressureFromLogs();
             this.cdr.detectChanges();
             return;
         }
         this.syncViewerFromLogs();
+        this.syncGripPressureFromLogs();
         this.cdr.detectChanges();
     }
 
@@ -259,6 +293,21 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         await this.robotService.sendSerial(cmd);
         this.consoleCommand = '';
         await this.refreshLogs();
+        if (cmd.toUpperCase() === 'PRESS?') {
+            await this.refreshGripPressure(false);
+        }
+    }
+
+    async refreshGripPressure(triggerDeviceRefresh: boolean = true) {
+        try {
+            this.gripPressure = triggerDeviceRefresh
+                ? await this.robotService.refreshGripPressure()
+                : await this.robotService.getGripPressure();
+            this.cdr.detectChanges();
+        } catch (err) {
+            console.error(err);
+            await this.refreshLogs();
+        }
     }
 
     async toggleEndstopTelemetry() {
@@ -360,6 +409,28 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         };
     }
 
+    private syncGripPressureFromLogs() {
+        const latestGripLog = [...this.logs].reverse().find((row) =>
+            row.dir === 'RX' && (row.message.startsWith('GRIP ') || row.message.startsWith('PRESS '))
+        );
+        if (!latestGripLog) {
+            return;
+        }
+
+        const match = latestGripLog.message.match(/P1:(\d+)%\s+P2:(\d+)%\s+MAX:(\d+)/);
+        if (!match) {
+            return;
+        }
+
+        this.gripPressure = {
+            p1: Number(match[1]),
+            p2: Number(match[2]),
+            max: Number(match[3]),
+            updatedAt: latestGripLog.ts,
+            source: latestGripLog.message.startsWith('GRIP ') ? 'GRIP' : 'PRESS'
+        };
+    }
+
     private delay(ms: number) {
         return new Promise<void>((resolve) => setTimeout(resolve, ms));
     }
@@ -373,8 +444,51 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.logsTimer = setInterval(() => { void this.refreshLogs(); }, intervalMs);
     }
 
+    private startGripPressurePolling() {
+        if (this.gripPressureTimer) {
+            clearInterval(this.gripPressureTimer);
+        }
+
+        this.gripPressureTimer = setInterval(() => {
+            if (this.robotService.connectionStatus() !== 'connected' || this.isExecutingGrip) {
+                return;
+            }
+            void this.refreshGripPressure();
+        }, 1200);
+    }
+
+    private async trackGripFeedbackUntilSettled() {
+        const maxAttempts = 10;
+        let previousMax: number | null = null;
+        let stableCount = 0;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await this.delay(220);
+            const sample = await this.robotService.refreshGripPressure();
+            this.gripPressure = sample;
+            this.cdr.detectChanges();
+
+            const currentMax = sample.max;
+            if (currentMax !== null && previousMax !== null && Math.abs(currentMax - previousMax) <= 1) {
+                stableCount += 1;
+            } else {
+                stableCount = 0;
+            }
+
+            previousMax = currentMax;
+
+            if (stableCount >= 2) {
+                break;
+            }
+        }
+    }
+
     get currentGripCommand(): string {
         return this.gripOpen ? 'GRIP:120' : 'GRIP:0';
+    }
+
+    get gripPressurePercent(): number {
+        return this.gripPressure.max ?? 0;
     }
 
     get endstopCards() {

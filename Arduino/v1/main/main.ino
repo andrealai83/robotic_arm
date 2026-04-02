@@ -3,7 +3,8 @@
 #include "Display.h"
 #include "Encoder.h"
 #include "Commands.h"
-#include "RobotLink.h" 
+#include "RobotLink.h"
+#include "PressureSensors.h"
 
 // Istanza del link radio (CE=9, CSN=10)
 RobotLink radioLink(48, 49);
@@ -28,6 +29,7 @@ void setup() {
   setupGripper();
   setupDisplay();
   encoderSetup();
+  pressureSensorsSetup();
 
   recalcPassiPerGrado();
   aggiornaDisplay();
@@ -55,6 +57,7 @@ void loop() {
   //encoderUpdate();
 
   endstopTelemetryUpdate();
+  pressureSensorsUpdate();
   
    
 }

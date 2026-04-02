@@ -102,15 +102,38 @@
                             <button
                                 (click)="setGripper(true)"
                                 [class.gripper-active]="gripOpen"
+                                [disabled]="isExecutingGrip"
                                 class="btn-secondary">
-                                Chiudi
+                                {{ isExecutingGrip && gripOpen ? 'Invio...' : 'Chiudi' }}
                             </button>
                             <button
                                 (click)="setGripper(false)"
                                 [class.gripper-active]="!gripOpen"
+                                [disabled]="isExecutingGrip"
                                 class="btn-secondary">
-                                Apri
+                                {{ isExecutingGrip && !gripOpen ? 'Invio...' : 'Apri' }}
                             </button>
+                        </div>
+                    </div>
+
+                    <div class="grip-feedback">
+                        <div class="grip-feedback-header">
+                            <div>
+                                <div class="grip-feedback-label">Feedback presa</div>
+                                <div class="grip-feedback-meta">
+                                    S1 {{ gripPressure.p1 ?? 0 }}% · S2 {{ gripPressure.p2 ?? 0 }}% · fonte {{ gripPressure.source ?? 'N/D' }}
+                                </div>
+                            </div>
+                            <button class="btn-secondary" (click)="refreshGripPressure()">Aggiorna</button>
+                        </div>
+
+                        <div class="grip-meter">
+                            <div class="grip-meter-fill" [style.width.%]="gripPressurePercent"></div>
+                        </div>
+
+                        <div class="grip-feedback-footer">
+                            <span>Forza grip: {{ gripPressurePercent }}%</span>
+                            <span *ngIf="gripPressure.updatedAt">Ultimo update: {{ gripPressure.updatedAt | date:'HH:mm:ss' }}</span>
                         </div>
                     </div>
 

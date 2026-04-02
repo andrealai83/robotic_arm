@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "RobotLink.h"
 #include "Encoder.h"
+#include "PressureSensors.h"
 #include <Arduino.h>
   
 // ========= PARAMETRI VELOCITÀ =========
@@ -272,7 +273,22 @@ void processToken(const String &cmd)
   if (cmd.startsWith(F("GRIP:"))) {
     int angle = atoi(cmd.c_str() + 5);
     setGripperAngle(angle);
+    delay(120);
+    pressureSensorsUpdate();
     mostraMessaggio("GRIP:" + String(angle));
+    Serial.print(F("GRIP A:"));
+    Serial.print(angle);
+    Serial.print(F(" P1:"));
+    Serial.print(getPressurePercent(1));
+    Serial.print(F("% P2:"));
+    Serial.print(getPressurePercent(2));
+    Serial.print(F("% MAX:"));
+    Serial.println(getGripPressurePercent());
+    return;
+  }
+  if (cmd == F("PRESS?")) {
+    pressureSensorsUpdate();
+    printPressureStatus();
     return;
   }
 

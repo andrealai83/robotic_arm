@@ -1,6 +1,6 @@
 {
   "passiPerGiro": 200,
   "microstep": 4,
-  "maxSpeed": 3000,
-  "maxAccel": 3000
+  "maxSpeed": 800,
+  "maxAccel": 2500
 }

@@ -15,6 +15,13 @@ type SerialLike = Pick<
 type StorageLike = Pick<Storage, 'getAll' | 'save' | 'delete'>;
 type RobotConfigStoreLike = Pick<RobotConfigStore, 'get' | 'set' | 'buildConfigurationCommands'>;
 type SerialLogEntry = { ts: string; dir: 'RX' | 'TX' | 'SYS'; message: string };
+type GripPressureState = {
+    p1: number | null;
+    p2: number | null;
+    max: number | null;
+    updatedAt: string | null;
+    source: 'GRIP' | 'PRESS' | null;
+};
 
 interface AppDependencies {
     serial?: SerialLike;
@@ -39,6 +46,13 @@ export function createApp(deps: AppDependencies = {}) {
 
     const logBuffer: SerialLogEntry[] = [];
     const LOG_MAX = 500;
+    const gripPressure: GripPressureState = {
+        p1: null,
+        p2: null,
+        max: null,
+        updatedAt: null,
+        source: null
+    };
 
     const pushLog = (dir: 'RX' | 'TX' | 'SYS', message: string) => {
         logBuffer.push({ ts: new Date().toISOString(), dir, message });
@@ -47,7 +61,10 @@ export function createApp(deps: AppDependencies = {}) {
         }
     };
 
-    serial.onDataReceived = (data: string) => pushLog('RX', data);
+    serial.onDataReceived = (data: string) => {
+        pushLog('RX', data);
+        updateGripPressureFromLine(data);
+    };
 
     // Serial endpoints
     app.post('/api/connect', async (req, res) => {
@@ -141,6 +158,23 @@ export function createApp(deps: AppDependencies = {}) {
 
     app.get('/api/logs', (req, res) => {
     res.json(logBuffer);
+    });
+
+    app.get('/api/grip-pressure', (req, res) => {
+    res.json(gripPressure);
+    });
+
+    app.post('/api/grip-pressure/refresh', async (req, res) => {
+    if (!serial.isOpen()) {
+        return res.status(409).json({ error: 'Serial port not connected' });
+    }
+
+    const line = await requestPressureSample();
+    if (!line) {
+        return res.status(504).json({ error: 'Timeout waiting pressure sample' });
+    }
+
+    res.json(gripPressure);
     });
 
     app.post('/api/logs/clear', (req, res) => {
@@ -297,6 +331,19 @@ export function createApp(deps: AppDependencies = {}) {
     pushLog('TX', data.replace(/\r/g, '\\r').replace(/\n/g, '\\n'));
     }
 
+    function updateGripPressureFromLine(line: string): void {
+    const match = line.match(/(?:^GRIP\b.*\s|^PRESS\s+)P1:(\d+)%\s+P2:(\d+)%\s+MAX:(\d+)/i);
+    if (!match) {
+        return;
+    }
+
+    gripPressure.p1 = Number(match[1]);
+    gripPressure.p2 = Number(match[2]);
+    gripPressure.max = Number(match[3]);
+    gripPressure.updatedAt = new Date().toISOString();
+    gripPressure.source = line.startsWith('GRIP ') ? 'GRIP' : 'PRESS';
+    }
+
     function wait(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -345,6 +392,16 @@ export function createApp(deps: AppDependencies = {}) {
         serial.addDataListener(onLine);
         sendSerial(data);
     });
+    }
+
+    async function requestPressureSample(): Promise<string | null> {
+    const waitPromise = waitForLine((line) => /^PRESS\s+P1:\d+%\s+P2:\d+%\s+MAX:\d+$/i.test(line), 1200);
+    sendSerial('PRESS?\n');
+    const line = await waitPromise;
+    if (line) {
+        updateGripPressureFromLine(line);
+    }
+    return line;
     }
 
     async function applyConfiguration(config: RobotConfiguration): Promise<void> {
