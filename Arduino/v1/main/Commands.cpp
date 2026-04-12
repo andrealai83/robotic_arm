@@ -52,6 +52,11 @@ static inline int16_t withDeadband(int16_t v){
 }
 
 static inline bool syncM4FromM2(bool moveNow) {
+  if (!isM2M4CouplingEnabled()) {
+    target4 = 0;
+    motore4Completato = true;
+    return false;
+  }
   long desiredM4 = lroundf((float)target2 * (float)COUPLE_M4_SIGN);
   desiredM4 = clampL(desiredM4, -LIM_MAX_M2, -LIM_MIN_M2);
   if (desiredM4 == target4) return false;
@@ -342,7 +347,9 @@ void processToken(const String &cmd)
     mostraMessaggio("HOMING 2...");
     homingMotor(motore2, ENDSTOP_2_PIN, 1);
     encoderReset(2);  // resetta encoder dopo homing
-    encoderReset(4);  // M4 e' sempre in coppia con M2
+    if (isM2M4CouplingEnabled()) {
+      encoderReset(4);  // M4 e' sempre in coppia con M2
+    }
     target2 = 0;
     syncM4FromM2(false);
     aggiornaDisplay();

@@ -1,3 +1,4 @@
+#include "HardwareSerial.h"
 #include "PressureSensors.h"
 #include "Config.h"
 
@@ -43,7 +44,7 @@ void updatePressureSensor(PressureSensorData& sensor) {
 
   const float rawDrop = max(0.0f, (float)sensor.baselineRaw - sensor.filteredRaw);
   const bool releaseZone = rawDrop <= (float)PRESSURE_IDLE_DEADBAND_RAW;
-
+ 
   if (releaseZone) {
     sensor.baselineRaw = (int)(PRESSURE_BASELINE_TRACK_ALPHA * sensor.filteredRaw +
                                (1.0f - PRESSURE_BASELINE_TRACK_ALPHA) * sensor.baselineRaw + 0.5f);
@@ -58,6 +59,9 @@ void updatePressureSensor(PressureSensorData& sensor) {
 
   sensor.percent = (uint8_t)(percent + 0.5f);
   sensor.active = (sensor.percent >= PRESSURE_CONTACT_THRESHOLD_PERCENT);
+
+   Serial.println( (uint8_t)(percent));
+
 
   if (sensor.active) {
     sensor.lastActiveMs = now;
@@ -75,6 +79,7 @@ void pressureSensorsSetup() {
 }
 
 void pressureSensorsUpdate() {
+  
   updatePressureSensor(pressureSensors[0]);
   updatePressureSensor(pressureSensors[1]);
 }

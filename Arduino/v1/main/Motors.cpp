@@ -14,6 +14,15 @@ Servo gripper;
 static int gripperAngleDeg = 0;
 static const uint8_t GRIPPER_STEP_DEG = 1;
 static const uint8_t GRIPPER_STEP_DELAY_MS = 20;
+static const bool M2_M4_COUPLING_ENABLED = true;
+
+static void forceDisableM4()
+{
+  motore4.stop();
+  motore4.setCurrentPosition(motore4.currentPosition());
+  motore4.disableOutputs();
+  digitalWrite(ENA4, EN_ACTIVE_HIGH ? LOW : HIGH);
+}
 
 bool motore1Completato = true;
 bool motore2Completato = true;
@@ -49,6 +58,7 @@ void setupMotors()
 
   // M4 non ha configurazione autonoma: e' sempre mirror di M2.
   pinMode(ENA4, OUTPUT);
+  forceDisableM4();
   setEnableAll(true);
   motore4.setMaxSpeed(maxSpeed);
   motore4.setAcceleration(maxAccel);
@@ -67,7 +77,7 @@ void moveAllToDegrees(int g1, int g2, int g3, int g4, int g5, int g6)
   target1 = g1;
   target2 = g2;
   target3 = g3;
-  target4 = -g2;
+  target4 = M2_M4_COUPLING_ENABLED ? -g2 : 0;
   target5 = g5;
   target6 = g6;
   startCoordinatedMove();
@@ -78,7 +88,7 @@ void moveAllToDegrees(int g1, int g2, int g3, int g4, int g5, int g6)
 void startCoordinatedMove()
 {
   // M4 e' asse virtuale: sempre in verso opposto a M2.
-  target4 = -target2;
+  target4 = M2_M4_COUPLING_ENABLED ? -target2 : 0;
 
   // 1. Calcola posizione attuale e target in passi
   long current1 = motore1.currentPosition();
@@ -103,7 +113,7 @@ void startCoordinatedMove()
   long dist1 = abs(targetPos1 - current1);
   long dist2 = abs(targetPos2 - current2);
   long dist3 = abs(targetPos3 - current3);
-  long dist4 = abs(delta2);
+  long dist4 = M2_M4_COUPLING_ENABLED ? abs(delta2) : 0;
   long dist5 = abs(targetPos5 - current5);
   long dist6 = abs(targetPos6 - current6);
   motor6MovedInLastRun = (dist6 > 0);
@@ -173,7 +183,9 @@ void startCoordinatedMove()
   setupAxis(motore2, dist2);
   setupAxis(motore3, dist3);
   // M4 usa lo stesso profilo di M2 per evitare ritardi percepibili.
-  setupAxis(motore4, dist2);
+  if (M2_M4_COUPLING_ENABLED) {
+    setupAxis(motore4, dist2);
+  }
   setupAxis(motore5, dist5);
   setupAxis(motore6, dist6);
 
@@ -181,7 +193,9 @@ void startCoordinatedMove()
   motore1.moveTo(targetPos1);
   motore2.moveTo(targetPos2);
   motore3.moveTo(targetPos3);
-  motore4.moveTo(targetPos4);
+  if (M2_M4_COUPLING_ENABLED) {
+    motore4.moveTo(targetPos4);
+  }
   motore5.moveTo(targetPos5);
   motore6.moveTo(targetPos6);
 
@@ -191,7 +205,7 @@ void startCoordinatedMove()
   motore1Completato = false;
   motore2Completato = false;
   motore3Completato = false;
-  motore4Completato = false;
+  motore4Completato = !M2_M4_COUPLING_ENABLED;
   motore5Completato = false;
   motore6Completato = false;
 
@@ -239,7 +253,7 @@ void handleMotors()
         motore3.run();
         running = true;
       }
-      if (motore4.distanceToGo() != 0)
+      if (M2_M4_COUPLING_ENABLED && motore4.distanceToGo() != 0)
       {
         motore4.run();
         running = true;
@@ -279,8 +293,10 @@ void handleMotors()
       motore2.setCurrentPosition(motore2.currentPosition());
       motore3.stop();
       motore3.setCurrentPosition(motore3.currentPosition());
-      motore4.stop();
-      motore4.setCurrentPosition(motore4.currentPosition());
+      if (M2_M4_COUPLING_ENABLED) {
+        motore4.stop();
+        motore4.setCurrentPosition(motore4.currentPosition());
+      }
       motore5.stop();
       motore5.setCurrentPosition(motore5.currentPosition());
       motore6.stop();
@@ -320,8 +336,10 @@ void handleMotors()
     motore2.setAcceleration(maxAccel);
     motore3.setMaxSpeed(maxSpeed);
     motore3.setAcceleration(maxAccel);
-    motore4.setMaxSpeed(maxSpeed);
-    motore4.setAcceleration(maxAccel);
+    if (M2_M4_COUPLING_ENABLED) {
+      motore4.setMaxSpeed(maxSpeed);
+      motore4.setAcceleration(maxAccel);
+    }
     motore5.setMaxSpeed(maxSpeed);
     motore5.setAcceleration(maxAccel);
     motore6.setMaxSpeed(maxSpeed);
@@ -362,7 +380,11 @@ void setEnableAll(bool on)
   digitalWrite(ENA1, level);
   digitalWrite(ENA2, level);
   digitalWrite(ENA3, level);
-  digitalWrite(ENA4, level);
+  if (M2_M4_COUPLING_ENABLED) {
+    digitalWrite(ENA4, level);
+  } else {
+    forceDisableM4();
+  }
   digitalWrite(ENA5, level);
   digitalWrite(ENA6, level);
   motor6Enabled = on;
@@ -383,7 +405,9 @@ void setEnableAll(bool on)
     motore1.setCurrentPosition((long)(jointDeg1 * passiPerGrado));
     motore2.setCurrentPosition((long)(jointDeg2 * passiPerGrado));
     motore3.setCurrentPosition((long)(jointDeg3 * passiPerGrado));
-    motore4.setCurrentPosition((long)(jointDeg4 * passiPerGrado));
+    if (M2_M4_COUPLING_ENABLED) {
+      motore4.setCurrentPosition((long)(jointDeg4 * passiPerGrado));
+    }
     motore5.setCurrentPosition((long)(jointDeg5 * passiPerGrado));
   }
 }
@@ -463,6 +487,9 @@ void setTarget(AccelStepper &motore, int targetGradi)
 
 void setCoupledTargetM2M4(int targetGradiM2)
 {
+  if (!M2_M4_COUPLING_ENABLED) {
+    return;
+  }
   if (targetGradiM2 < -360 || targetGradiM2 > 360)
   {
     Serial.println(F("Errore: target fuori limite (-360..360\xB0)"));
@@ -552,7 +579,7 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
   prevMaxSpeedArr[motorIndex] = (long)motore.maxSpeed();
   prevAccelArr[motorIndex] = (long)motore.acceleration();
 
-  const bool coupledM2M4 = (motorIndex == 1);
+  const bool coupledM2M4 = M2_M4_COUPLING_ENABLED && (motorIndex == 1);
   if (motorIndex == 4)
   {
     markMotor6Activity();
@@ -583,6 +610,11 @@ void homingMotor(AccelStepper &motore, int endstopPin, int motorIndex)
   homingInProgress = true;
 }
 
+bool isM2M4CouplingEnabled()
+{
+  return M2_M4_COUPLING_ENABLED;
+}
+
 // Aggiornamento non-bloccante dello stato di homing; chiamare frequentemente (es. da handleMotors())
 void homingUpdate()
 {
@@ -595,7 +627,7 @@ void homingUpdate()
     if (!homingActiveArr[i]) continue;
     anyActive = true;
     AccelStepper* m = motors[i];
-    const bool coupled = (i == 1);
+    const bool coupled = M2_M4_COUPLING_ENABLED && (i == 1);
     int ep = endPins[i];
 
     if (homingPhase[i] == H_SEEK)

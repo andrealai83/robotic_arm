@@ -57,8 +57,7 @@ void loop() {
   //encoderUpdate();
 
   endstopTelemetryUpdate();
-  pressureSensorsUpdate();
-  
+  pressureSensorsUpdate(); 
    
 }
  

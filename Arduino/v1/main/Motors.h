@@ -42,6 +42,7 @@ void moveAllToDegrees(int g1,int g2,int g3,int g4,int g5 = 0,int g6 = 0);
 extern Servo gripper;
 void setupGripper();
 void setGripperAngle(int angle);
+bool isM2M4CouplingEnabled();
 
 // Nuova gestione coordinata scalata
 void startCoordinatedMove();   
