@@ -4,6 +4,7 @@ import { SerialManager } from './serial-manager';
 import { Storage } from './storage';
 import { KinematicsHelper, CartesianPosition, Movimento } from './kinematics';
 import { RobotConfigStore, RobotConfiguration } from './robot-config';
+import { AiProvider, OllamaAiProvider, AiCommand, interpretFastPath } from './ai';
 
 type SerialLike = Pick<
     SerialManager,
@@ -27,6 +28,7 @@ interface AppDependencies {
     serial?: SerialLike;
     storage?: StorageLike;
     robotConfigStore?: RobotConfigStoreLike;
+    aiProvider?: AiProvider;
     port?: number;
     initializeDelayMs?: number;
 }
@@ -37,6 +39,7 @@ export function createApp(deps: AppDependencies = {}) {
     const serial = deps.serial ?? new SerialManager();
     const storage = deps.storage ?? new Storage();
     const robotConfigStore = deps.robotConfigStore ?? new RobotConfigStore();
+    const aiProvider = deps.aiProvider ?? new OllamaAiProvider();
     const initializeDelayMs = deps.initializeDelayMs ?? 1500;
     let manualExecBusy = false;
     let sequenceExecBusy = false;
@@ -142,6 +145,40 @@ export function createApp(deps: AppDependencies = {}) {
 
     app.get('/api/config', (req, res) => {
     res.json(robotConfigStore.get());
+    });
+
+    app.get('/api/ai/status', async (req, res) => {
+    try {
+        const status = await aiProvider.health();
+        res.json(status);
+    } catch (err: any) {
+        res.status(503).json({ ok: false, error: err.message });
+    }
+    });
+
+    app.post('/api/ai/interpret', async (req, res) => {
+    const input = String(req.body?.input ?? '').trim();
+    if (!input) {
+        return res.status(400).json({ error: 'Empty input' });
+    }
+
+    try {
+        const context = {
+            input,
+            sequences: storage.getAll(),
+            currentJoints: sanitizeCurrentJoints(req.body?.currentJoints)
+        };
+        const parsed = interpretFastPath(context) ?? await aiProvider.interpret(context);
+        const preview = buildAiPreview(parsed, context.currentJoints);
+        res.json({
+            status: 'ok',
+            input,
+            parsed,
+            preview
+        });
+    } catch (err: any) {
+        res.status(502).json({ error: err.message });
+    }
     });
 
     app.put('/api/config', async (req, res) => {
@@ -316,6 +353,119 @@ export function createApp(deps: AppDependencies = {}) {
     const m6 = typeof mov.m6 === 'number' && Number.isFinite(mov.m6) ? mov.m6 : 0;
     // Single-line batch avoids parser interleaving between loop cycles on Arduino.
     return `M1:${mov.m1.toFixed(2)};M2:${mov.m2.toFixed(2)};M3:${mov.m3.toFixed(2)};M5:${m5.toFixed(2)};M6:${m6.toFixed(2)};${grip};${c};RUN\n`;
+    }
+
+    function buildAiPreview(
+        command: AiCommand,
+        currentJoints: { m1: number; m2: number; m3: number; m5: number; m6: number } | null
+    ): { endpoint: string; payload: Record<string, unknown> } | null {
+    switch (command.intent) {
+        case 'home':
+            return {
+                endpoint: `/api/home/${command.axis}`,
+                payload: {}
+            };
+        case 'move_cartesian':
+            return {
+                endpoint: '/api/move/cartesian',
+                payload: {
+                    x: command.x,
+                    y: command.y,
+                    z: command.z
+                }
+            };
+        case 'move_joint':
+            return {
+                endpoint: '/api/move/raw',
+                payload: {
+                    m1: command.m1 ?? currentJoints?.m1 ?? 0,
+                    m2: command.m2 ?? currentJoints?.m2 ?? 0,
+                    m3: command.m3 ?? currentJoints?.m3 ?? 0,
+                    m5: command.m5 ?? currentJoints?.m5 ?? 0,
+                    m6: command.m6 ?? currentJoints?.m6 ?? 0,
+                    grip: command.grip ?? 'GRIP:0',
+                    c: command.c ?? 'C:0'
+                }
+            };
+        case 'move_joint_delta':
+            if (!currentJoints) {
+                return null;
+            }
+            return {
+                endpoint: '/api/move/raw',
+                payload: {
+                    m1: currentJoints.m1 + (command.m1 ?? 0),
+                    m2: currentJoints.m2 + (command.m2 ?? 0),
+                    m3: currentJoints.m3 + (command.m3 ?? 0),
+                    m5: currentJoints.m5 + (command.m5 ?? 0),
+                    m6: currentJoints.m6 + (command.m6 ?? 0),
+                    grip: 'GRIP:0',
+                    c: 'C:0'
+                }
+            };
+        case 'run_sequence': {
+            const sequence = findSequence(command);
+            if (!sequence) {
+                return null;
+            }
+            return {
+                endpoint: `/api/sequence/run-sync/${sequence.id}`,
+                payload: {}
+            };
+        }
+        case 'set_grip':
+            return {
+                endpoint: '/api/move/raw',
+                payload: {
+                    m1: 0,
+                    m2: 0,
+                    m3: 0,
+                    m5: 0,
+                    m6: 0,
+                    grip: command.grip,
+                    c: 'C:0'
+                }
+            };
+        case 'unknown':
+            return null;
+    }
+    }
+
+    function sanitizeCurrentJoints(value: unknown): { m1: number; m2: number; m3: number; m5: number; m6: number } | null {
+    const record = value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : null;
+    if (!record) {
+        return null;
+    }
+
+    const m1 = Number(record.m1);
+    const m2 = Number(record.m2);
+    const m3 = Number(record.m3);
+    const m5 = Number(record.m5);
+    const m6 = Number(record.m6);
+    if (![m1, m2, m3, m5, m6].every(Number.isFinite)) {
+        return null;
+    }
+
+    return { m1, m2, m3, m5, m6 };
+    }
+
+    function findSequence(command: Extract<AiCommand, { intent: 'run_sequence' }>) {
+    const all = storage.getAll();
+    if (typeof command.sequenceId === 'number') {
+        const byId = all.find((item) => item.id === command.sequenceId);
+        if (byId) {
+            return byId;
+        }
+    }
+
+    const requestedName = String(command.sequenceName ?? '').trim().toLowerCase();
+    if (!requestedName) {
+        return null;
+    }
+
+    return all.find((item) => item.name.trim().toLowerCase() === requestedName) ?? null;
     }
 
     function normalizeGrip(value: unknown): string {

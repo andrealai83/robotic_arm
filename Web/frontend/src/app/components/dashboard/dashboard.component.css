@@ -1,5 +1,318 @@
 /* Dashboard specific styles if needed */
 
+.voice-overlay {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.voice-overlay-card {
+    width: min(360px, calc(100vw - 32px));
+    padding: 18px 18px 16px;
+    border-radius: 24px;
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.32);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.voice-overlay-wake {
+    border-color: rgba(34, 197, 94, 0.5);
+    background: rgba(7, 29, 20, 0.94);
+}
+
+.voice-mic-orb {
+    position: relative;
+    width: 78px;
+    height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-mic-pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.42), rgba(59, 130, 246, 0.08) 64%, transparent 70%);
+    animation: voicePulse 1.6s ease-out infinite;
+}
+
+.voice-overlay-wake .voice-mic-pulse {
+    background: radial-gradient(circle at center, rgba(34, 197, 94, 0.45), rgba(34, 197, 94, 0.1) 64%, transparent 70%);
+}
+
+.voice-mic-icon {
+    position: relative;
+    width: 44px;
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    animation: micBob 1.8s ease-in-out infinite;
+}
+
+.voice-mic-body {
+    width: 26px;
+    height: 32px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #e0f2fe, #7dd3fc 55%, #2563eb);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.26);
+}
+
+.voice-overlay-wake .voice-mic-body {
+    background: linear-gradient(180deg, #dcfce7, #86efac 55%, #16a34a);
+    box-shadow: 0 10px 22px rgba(22, 163, 74, 0.26);
+}
+
+.voice-mic-stem {
+    width: 4px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(226, 232, 240, 0.92);
+    margin-top: 2px;
+}
+
+.voice-mic-base {
+    width: 24px;
+    height: 10px;
+    border-bottom: 4px solid rgba(226, 232, 240, 0.92);
+    border-radius: 0 0 16px 16px;
+    margin-top: 1px;
+}
+
+.voice-overlay-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #eff6ff;
+}
+
+.voice-overlay-subtitle {
+    font-size: 12px;
+    color: #cbd5e1;
+    max-width: 280px;
+}
+
+.voice-status-banner {
+    margin-top: 2px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.16);
+    color: #dbeafe;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.voice-status-success {
+    background: rgba(34, 197, 94, 0.18);
+    color: #dcfce7;
+}
+
+.voice-status-error {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fee2e2;
+}
+
+@keyframes voicePulse {
+    0% {
+        transform: scale(0.88);
+        opacity: 0.65;
+    }
+    70% {
+        transform: scale(1.16);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.18);
+        opacity: 0;
+    }
+}
+
+@keyframes micBob {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.ai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ai-subtitle {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.ai-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #dbeafe;
+}
+
+.ai-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.14);
+}
+
+.ai-status-online {
+    background: #22c55e;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+}
+
+.ai-command-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ai-command-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ai-command-row textarea {
+    min-height: 84px;
+    resize: vertical;
+}
+
+.ai-voice-btn {
+    min-width: 116px;
+}
+
+.ai-voice-meta {
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+.ai-voice-status {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.14);
+    color: #dbeafe;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ai-voice-status-success {
+    background: rgba(34, 197, 94, 0.18);
+    color: #dcfce7;
+}
+
+.ai-voice-status-error {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fee2e2;
+}
+
+.ai-result-card {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(96, 165, 250, 0.18);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.88));
+}
+
+.ai-result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ai-intent {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #93c5fd;
+}
+
+.ai-explanation {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.ai-confidence {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.18);
+    color: #bfdbfe;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ai-json-block,
+.ai-preview pre {
+    margin: 0;
+    border-radius: 10px;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    overflow: auto;
+}
+
+.ai-json-block pre,
+.ai-preview pre {
+    margin: 0;
+    padding: 12px;
+    font-size: 12px;
+    color: #dbeafe;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.ai-preview {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ai-preview-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.ai-preview-endpoint {
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    color: #86efac;
+}
+
 .viewer-frame {
     width: 100%;
     height: min(78vh, 900px);

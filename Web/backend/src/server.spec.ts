@@ -3,6 +3,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { createApp } from './server';
 import { Movimento } from './kinematics';
 import { RobotConfiguration } from './robot-config';
+import { AiCommand, AiInterpretContext } from './ai';
 
 function last<T>(items: T[]): T | undefined {
     return items[items.length - 1];
@@ -120,22 +121,50 @@ class MockRobotConfigStore {
     }
 }
 
+class MockAiProvider {
+    public available = true;
+    public nextCommand: AiCommand = {
+        intent: 'unknown',
+        explanation: 'No command configured in mock.'
+    };
+    public lastContext: AiInterpretContext | null = null;
+
+    async health() {
+        if (!this.available) {
+            throw new Error('Ollama unavailable');
+        }
+        return {
+            ok: true,
+            baseUrl: 'http://127.0.0.1:11434',
+            model: 'qwen2.5:7b'
+        };
+    }
+
+    async interpret(context: AiInterpretContext): Promise<AiCommand> {
+        this.lastContext = context;
+        return this.nextCommand;
+    }
+}
+
 function buildTestContext(overrides?: {
     serial?: MockSerial;
     storage?: MockStorage;
     robotConfigStore?: MockRobotConfigStore;
+    aiProvider?: MockAiProvider;
 }) {
     const serial = overrides?.serial ?? new MockSerial();
     const storage = overrides?.storage ?? new MockStorage();
     const robotConfigStore = overrides?.robotConfigStore ?? new MockRobotConfigStore();
+    const aiProvider = overrides?.aiProvider ?? new MockAiProvider();
     const { app } = createApp({
         serial,
         storage,
         robotConfigStore,
+        aiProvider,
         initializeDelayMs: 0
     });
 
-    return { app, serial, storage, robotConfigStore };
+    return { app, serial, storage, robotConfigStore, aiProvider };
 }
 
 describe('API endpoints', () => {
@@ -275,6 +304,217 @@ describe('API endpoints', () => {
                 maxAccel: 2000
             }
         });
+    });
+
+    it('returns AI status when Ollama provider is reachable', async () => {
+        const res = await request(ctx.app).get('/api/ai/status');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({
+            ok: true,
+            baseUrl: 'http://127.0.0.1:11434',
+            model: 'qwen2.5:7b'
+        });
+    });
+
+    it('returns AI interpreter output and preview for cartesian moves', async () => {
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({ input: 'vai a x 12 y 34 z 56' });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext).toBeNull();
+        expect(res.body).toEqual({
+            status: 'ok',
+            input: 'vai a x 12 y 34 z 56',
+            parsed: {
+                intent: 'move_cartesian',
+                x: 12,
+                y: 34,
+                z: 56,
+                confidence: 0.98,
+                explanation: 'Recognized explicit cartesian coordinates.'
+            },
+            preview: {
+                endpoint: '/api/move/cartesian',
+                payload: {
+                    x: 12,
+                    y: 34,
+                    z: 56
+                }
+            }
+        });
+    });
+
+    it('uses fast-path parsing for direct home commands', async () => {
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({ input: 'home asse 2' });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext).toBeNull();
+        expect(res.body).toEqual({
+            status: 'ok',
+            input: 'home asse 2',
+            parsed: {
+                intent: 'home',
+                axis: '2',
+                confidence: 0.99,
+                explanation: 'Recognized direct homing command for a specific axis.'
+            },
+            preview: {
+                endpoint: '/api/home/2',
+                payload: {}
+            }
+        });
+    });
+
+    it('uses fast-path parsing for direct gripper commands', async () => {
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({ input: 'chiudi pinza' });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext).toBeNull();
+        expect(res.body).toEqual({
+            status: 'ok',
+            input: 'chiudi pinza',
+            parsed: {
+                intent: 'set_grip',
+                grip: 'GRIP:120',
+                confidence: 0.99,
+                explanation: 'Recognized direct close gripper command.'
+            },
+            preview: {
+                endpoint: '/api/move/raw',
+                payload: {
+                    m1: 0,
+                    m2: 0,
+                    m3: 0,
+                    m5: 0,
+                    m6: 0,
+                    grip: 'GRIP:120',
+                    c: 'C:0'
+                }
+            }
+        });
+    });
+
+    it('uses fast-path parsing for relative joint movement commands', async () => {
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({
+                input: 'muovi m2 di 50 gradi',
+                currentJoints: { m1: 10, m2: 20, m3: 30, m5: 0, m6: 0 }
+            });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext).toBeNull();
+        expect(res.body).toEqual({
+            status: 'ok',
+            input: 'muovi m2 di 50 gradi',
+            parsed: {
+                intent: 'move_joint_delta',
+                m2: 50,
+                confidence: 0.98,
+                explanation: 'Recognized relative joint movement.'
+            },
+            preview: {
+                endpoint: '/api/move/raw',
+                payload: {
+                    m1: 10,
+                    m2: 70,
+                    m3: 30,
+                    m5: 0,
+                    m6: 0,
+                    grip: 'GRIP:0',
+                    c: 'C:0'
+                }
+            }
+        });
+    });
+
+    it('uses fast-path parsing for absolute joint target commands', async () => {
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({
+                input: 'porta m2 a 50 gradi',
+                currentJoints: { m1: 10, m2: 20, m3: 30, m5: 5, m6: 6 }
+            });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext).toBeNull();
+        expect(res.body).toEqual({
+            status: 'ok',
+            input: 'porta m2 a 50 gradi',
+            parsed: {
+                intent: 'move_joint',
+                m2: 50,
+                confidence: 0.98,
+                explanation: 'Recognized absolute joint target.'
+            },
+            preview: {
+                endpoint: '/api/move/raw',
+                payload: {
+                    m1: 10,
+                    m2: 50,
+                    m3: 30,
+                    m5: 5,
+                    m6: 6,
+                    grip: 'GRIP:0',
+                    c: 'C:0'
+                }
+            }
+        });
+    });
+
+    it('builds a preview for a named stored sequence', async () => {
+        ctx = buildTestContext({
+            storage: new MockStorage([
+                { id: 4, name: 'pick', movements: [{ m1: 1, m2: 2, m3: 3, c: 'C:0' }] }
+            ])
+        });
+
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({ input: 'esegui la sequenza pick' });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext).toBeNull();
+        expect(res.body.preview).toEqual({
+            endpoint: '/api/sequence/run-sync/4',
+            payload: {}
+        });
+    });
+
+    it('falls back to Ollama when fast-path does not match', async () => {
+        ctx.aiProvider.nextCommand = {
+            intent: 'unknown',
+            confidence: 0.55,
+            explanation: 'Ambiguous natural language command.'
+        };
+
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({ input: 'sposta il braccio un po piu avanti' });
+
+        expect(res.status).toBe(200);
+        expect(ctx.aiProvider.lastContext?.input).toBe('sposta il braccio un po piu avanti');
+        expect(ctx.aiProvider.lastContext?.sequences).toEqual([]);
+        expect(res.body.parsed).toEqual({
+            intent: 'unknown',
+            confidence: 0.55,
+            explanation: 'Ambiguous natural language command.'
+        });
+    });
+
+    it('rejects empty AI input', async () => {
+        const res = await request(ctx.app)
+            .post('/api/ai/interpret')
+            .send({ input: '   ' });
+
+        expect(res.status).toBe(400);
+        expect(res.body).toEqual({ error: 'Empty input' });
     });
 
     it('lists, saves and deletes sequences', async () => {

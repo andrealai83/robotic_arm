@@ -1,4 +1,33 @@
 <div class="container">
+    <div class="voice-overlay" *ngIf="isListeningVoice || voiceWakeDetected">
+        <div class="voice-overlay-card" [class.voice-overlay-wake]="voiceWakeDetected">
+            <div class="voice-mic-orb">
+                <div class="voice-mic-pulse"></div>
+                <div class="voice-mic-icon" aria-hidden="true">
+                    <div class="voice-mic-body"></div>
+                    <div class="voice-mic-stem"></div>
+                    <div class="voice-mic-base"></div>
+                </div>
+            </div>
+            <div class="voice-overlay-title">
+                {{ voiceWakeDetected ? 'Wake Word Rilevata' : 'Ascolto Attivo' }}
+            </div>
+            <div class="voice-overlay-subtitle" *ngIf="voiceWakeDetected">
+                "{{ lastWakeTrigger || voiceWakeWord }}"
+            </div>
+            <div class="voice-overlay-subtitle" *ngIf="!voiceWakeDetected">
+                Di' "{{ voiceWakeWord }}" seguito dal comando
+            </div>
+            <div
+                class="voice-status-banner"
+                *ngIf="voiceStatusMessage"
+                [class.voice-status-success]="voiceStatusTone === 'success'"
+                [class.voice-status-error]="voiceStatusTone === 'error'">
+                {{ voiceStatusMessage }}
+            </div>
+        </div>
+    </div>
+
     <header class="header">
         <div>
             <h1 class="title">Robot Control</h1>
@@ -26,6 +55,100 @@
        
         <div class="column">
             <!-- MOVIMENTI -->
+            <div class="card">
+                <div class="ai-header">
+                    <div>
+                        <h2 style="margin:0;">AI Control</h2>
+                        <div class="ai-subtitle">Comando naturale con preview sicura prima dell'esecuzione</div>
+                    </div>
+                    <button class="btn-secondary" (click)="refreshAiStatus()" [disabled]="isCheckingAi">
+                        {{ isCheckingAi ? 'Check...' : 'Verifica Ollama' }}
+                    </button>
+                </div>
+
+                <div class="ai-status-row">
+                    <span class="ai-status-dot" [class.ai-status-online]="aiStatus?.ok"></span>
+                    <span *ngIf="aiStatus?.ok; else aiOffline">
+                        Ollama online su {{ aiStatus?.baseUrl }} con modello {{ aiStatus?.model }}
+                    </span>
+                    <ng-template #aiOffline>
+                        <span>{{ aiError || 'Ollama non ancora disponibile' }}</span>
+                    </ng-template>
+                </div>
+
+                <div class="ai-command-row">
+                    <textarea
+                        [(ngModel)]="naturalCommand"
+                        rows="3"
+                        placeholder="Esempio: vai a x 12 y 34 z 56 oppure esegui la sequenza pick"></textarea>
+                    <div class="ai-command-actions">
+                        <button
+                            class="btn-secondary ai-voice-btn"
+                            (click)="toggleVoiceRecognition()"
+                            [disabled]="!voiceSupported">
+                            {{ (isListeningVoice || voiceAutoRestart) ? 'Stop Wake Word' : 'Avvia Wake Word' }}
+                        </button>
+                        <button class="btn-primary" (click)="interpretAiCommand()" [disabled]="isInterpretingAi">
+                            {{ isInterpretingAi ? 'Analisi...' : 'Interpreta' }}
+                        </button>
+                    </div>
+                    <div class="ai-voice-meta" *ngIf="voiceSupported">
+                        <span *ngIf="isListeningVoice || voiceAutoRestart">
+                            Ascolto attivo. Di' "{{ voiceWakeWord }}" seguito dal comando.
+                        </span>
+                        <span *ngIf="!(isListeningVoice || voiceAutoRestart)">
+                            Modalita' wake word browser su `it-IT`.
+                        </span>
+                    </div>
+                    <div class="ai-voice-meta" *ngIf="voiceTranscriptDraft">
+                        Ultimo ascolto: "{{ voiceTranscriptDraft }}"
+                    </div>
+                    <div class="ai-voice-meta" *ngIf="voiceLiveTranscript && (isListeningVoice || voiceAutoRestart)">
+                        Live: "{{ voiceLiveTranscript }}"
+                    </div>
+                    <div class="ai-voice-meta" *ngIf="lastWakeTrigger">
+                        Ultimo trigger wake word: "{{ lastWakeTrigger }}"
+                    </div>
+                    <div
+                        class="ai-voice-status"
+                        *ngIf="voiceStatusMessage"
+                        [class.ai-voice-status-success]="voiceStatusTone === 'success'"
+                        [class.ai-voice-status-error]="voiceStatusTone === 'error'">
+                        {{ voiceStatusMessage }}
+                    </div>
+                    <div class="ai-voice-meta" *ngIf="!voiceSupported">
+                        Browser senza supporto `SpeechRecognition`.
+                    </div>
+                </div>
+
+                <div class="ai-result-card" *ngIf="aiResult as result">
+                    <div class="ai-result-head">
+                        <div>
+                            <div class="ai-intent">{{ result.parsed.intent }}</div>
+                            <div class="ai-explanation">{{ result.parsed.explanation || 'Nessuna spiegazione fornita.' }}</div>
+                        </div>
+                        <div class="ai-confidence" *ngIf="aiConfidencePercent !== null">{{ aiConfidencePercent }}%</div>
+                    </div>
+
+                    <div class="ai-json-block">
+                        <pre>{{ result.parsed | json }}</pre>
+                    </div>
+
+                    <div class="ai-preview" *ngIf="result.preview as preview; else noPreview">
+                        <div class="ai-preview-title">Preview esecuzione</div>
+                        <div class="ai-preview-endpoint">{{ preview.endpoint }}</div>
+                        <pre>{{ preview.payload | json }}</pre>
+                        <button class="btn-primary" (click)="executeAiPreview()" [disabled]="isExecutingAi">
+                            {{ isExecutingAi ? 'Esecuzione...' : 'Esegui Preview' }}
+                        </button>
+                    </div>
+
+                    <ng-template #noPreview>
+                        <div class="pending-note">Il comando non e' ancora eseguibile automaticamente.</div>
+                    </ng-template>
+                </div>
+            </div>
+
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h2 style="margin-top:0;">Joint Control</h2>

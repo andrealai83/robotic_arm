@@ -46,6 +46,45 @@ export interface GripPressureState {
     source: 'GRIP' | 'PRESS' | null;
 }
 
+export interface AiStatus {
+    ok: boolean;
+    baseUrl: string;
+    model: string;
+    error?: string;
+}
+
+export interface AiPreview {
+    endpoint: string;
+    payload: Record<string, unknown>;
+}
+
+export interface AiCommand {
+    intent: 'home' | 'move_cartesian' | 'move_joint' | 'move_joint_delta' | 'run_sequence' | 'set_grip' | 'unknown';
+    confidence?: number;
+    explanation?: string;
+    axis?: 'all' | '1' | '2' | '3' | '4' | '5' | '6';
+    x?: number;
+    y?: number;
+    z?: number;
+    m1?: number;
+    m2?: number;
+    m3?: number;
+    m5?: number;
+    m6?: number;
+    grip?: string;
+    c?: string;
+    sequenceId?: number;
+    sequenceName?: string;
+    missing?: string[];
+}
+
+export interface AiInterpretResponse {
+    status: 'ok';
+    input: string;
+    parsed: AiCommand;
+    preview: AiPreview | null;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -158,6 +197,37 @@ export class RobotService {
 
     async getConfig(): Promise<RobotConfiguration> {
         const res = await fetch(`${this.apiUrl}/config`);
+        return res.json();
+    }
+
+    async getAiStatus(): Promise<AiStatus> {
+        const res = await fetch(`${this.apiUrl}/ai/status`);
+        return res.json();
+    }
+
+    async interpretAi(input: string): Promise<AiInterpretResponse> {
+        return this.interpretAiWithCurrent(input, null);
+    }
+
+    async interpretAiWithCurrent(
+        input: string,
+        currentJoints: { m1: number; m2: number; m3: number; m5: number; m6: number } | null
+    ): Promise<AiInterpretResponse> {
+        const res = await fetch(`${this.apiUrl}/ai/interpret`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input, currentJoints })
+        });
+        if (!res.ok) {
+            let msg = `AI interpret failed (${res.status})`;
+            try {
+                const body = await res.json();
+                if (body?.error) msg = body.error;
+            } catch {
+                // keep fallback message
+            }
+            throw new Error(msg);
+        }
         return res.json();
     }
 

@@ -1,7 +1,47 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { EndstopState, GripPressureState, Movimento, RobotConfiguration, RobotService, PositionSet, SerialLogEntry } from '../../services/robot.service';
+import {
+    AiInterpretResponse,
+    AiStatus,
+    EndstopState,
+    GripPressureState,
+    Movimento,
+    RobotConfiguration,
+    RobotService,
+    PositionSet,
+    SerialLogEntry
+} from '../../services/robot.service';
+
+interface SpeechRecognitionAlternativeLike {
+    transcript: string;
+}
+
+interface SpeechRecognitionResultLike {
+    isFinal: boolean;
+    length: number;
+    item(index: number): SpeechRecognitionAlternativeLike;
+    [index: number]: SpeechRecognitionAlternativeLike;
+}
+
+interface SpeechRecognitionEventLike extends Event {
+    resultIndex: number;
+    results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionLike extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onstart: ((this: SpeechRecognitionLike, ev: Event) => unknown) | null;
+    onend: ((this: SpeechRecognitionLike, ev: Event) => unknown) | null;
+    onerror: ((this: SpeechRecognitionLike, ev: Event & { error?: string }) => unknown) | null;
+    onresult: ((this: SpeechRecognitionLike, ev: SpeechRecognitionEventLike) => unknown) | null;
+    start(): void;
+    stop(): void;
+}
+
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 @Component({
     selector: 'app-dashboard',
@@ -43,6 +83,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     };
     logs: SerialLogEntry[] = [];
     consoleCommand = '';
+    naturalCommand = '';
+    aiStatus: AiStatus | null = null;
+    aiResult: AiInterpretResponse | null = null;
+    aiError = '';
+    isCheckingAi = false;
+    isInterpretingAi = false;
+    isExecutingAi = false;
+    isListeningVoice = false;
+    voiceWakeWord = 'robot';
+    voiceSupported = false;
+    voiceTranscriptDraft = '';
+    voiceLiveTranscript = '';
+    voiceWakeDetected = false;
+    lastWakeTrigger = '';
+    voiceStatusMessage = '';
+    voiceStatusTone: 'info' | 'success' | 'error' = 'info';
     endstopTelemetryEnabled = false;
     endstopState: EndstopState = {
         e1: null,
@@ -61,6 +117,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private logsTimer: ReturnType<typeof setInterval> | null = null;
     private gripPressureTimer: ReturnType<typeof setInterval> | null = null;
     private lastViewerMoveLogKey: string | null = null;
+    private speechRecognition: SpeechRecognitionLike | null = null;
+    voiceAutoRestart = false;
+    private wakeOverlayTimer: ReturnType<typeof setTimeout> | null = null;
+    private voiceStatusTimer: ReturnType<typeof setTimeout> | null = null;
+    private audioContext: AudioContext | null = null;
 
     constructor(
         public robotService: RobotService,
@@ -70,7 +131,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     async ngOnInit() {
         this.refreshPorts();
         this.refreshSequences();
+        this.initVoiceRecognition();
         await this.loadConfig();
+        await this.refreshAiStatus();
         await this.refreshLogs();
         this.startLogsPolling();
     }
@@ -88,6 +151,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             clearInterval(this.gripPressureTimer);
             this.gripPressureTimer = null;
         }
+        if (this.wakeOverlayTimer) {
+            clearTimeout(this.wakeOverlayTimer);
+            this.wakeOverlayTimer = null;
+        }
+        if (this.voiceStatusTimer) {
+            clearTimeout(this.voiceStatusTimer);
+            this.voiceStatusTimer = null;
+        }
+        this.audioContext?.close().catch(() => undefined);
+        this.stopVoiceRecognition();
     }
 
     async refreshPorts() {
@@ -100,6 +173,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     async connect() {
         await this.robotService.connect(this.selectedPort);
         await this.loadConfig();
+        await this.refreshAiStatus();
         await this.refreshLogs();
         await this.refreshGripPressure();
         this.startGripPressurePolling();
@@ -258,6 +332,137 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     async saveConfig() {
         await this.robotService.saveConfig(this.config);
         await this.refreshLogs();
+    }
+
+    async refreshAiStatus() {
+        this.isCheckingAi = true;
+        try {
+            this.aiStatus = await this.robotService.getAiStatus();
+            this.aiError = '';
+        } catch (err) {
+            this.aiStatus = null;
+            this.aiError = err instanceof Error ? err.message : 'AI status unavailable';
+        } finally {
+            this.isCheckingAi = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    async interpretAiCommand(autoExecuteSafe: boolean = false) {
+        const input = this.naturalCommand.trim();
+        if (!input || this.isInterpretingAi) {
+            return;
+        }
+
+        this.isInterpretingAi = true;
+        try {
+            this.aiResult = await this.robotService.interpretAiWithCurrent(input, {
+                m1: this.m1,
+                m2: this.m2,
+                m3: this.m3,
+                m5: this.m5,
+                m6: this.m6
+            });
+            this.aiError = '';
+            if (this.aiResult?.parsed.intent === 'unknown') {
+                this.setVoiceStatus('Comando non riconosciuto.', 'error');
+                this.playVoiceCue('error');
+            } else if (autoExecuteSafe && this.shouldAutoExecuteAi(this.aiResult)) {
+                await this.executeAiPreview(true);
+            } else if (autoExecuteSafe) {
+                this.setVoiceStatus('Comando riconosciuto. In attesa di conferma.', 'info');
+            }
+        } catch (err) {
+            this.aiResult = null;
+            this.aiError = err instanceof Error ? err.message : 'AI interpretation failed';
+            if (autoExecuteSafe) {
+                this.setVoiceStatus('Errore durante l’analisi del comando.', 'error');
+                this.playVoiceCue('error');
+            }
+        } finally {
+            this.isInterpretingAi = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    async executeAiPreview(fromVoice: boolean = false) {
+        const preview = this.aiResult?.preview;
+        if (!preview || this.isExecutingAi) {
+            return;
+        }
+
+        this.isExecutingAi = true;
+        try {
+            const payload = preview.payload;
+
+            switch (preview.endpoint) {
+                case '/api/move/cartesian':
+                    await this.robotService.moveCartesian({
+                        x: Number(payload['x']),
+                        y: Number(payload['y']),
+                        z: Number(payload['z'])
+                    });
+                    break;
+                case '/api/move/raw':
+                    this.applyJointStateFromPayload(payload);
+                    await this.robotService.moveRaw({
+                        m1: Number(payload['m1'] ?? 0),
+                        m2: Number(payload['m2'] ?? 0),
+                        m3: Number(payload['m3'] ?? 0),
+                        m5: Number(payload['m5'] ?? 0),
+                        m6: Number(payload['m6'] ?? 0),
+                        grip: String(payload['grip'] ?? 'GRIP:0'),
+                        c: String(payload['c'] ?? 'C:0')
+                    });
+                    break;
+                default:
+                    if (preview.endpoint.startsWith('/api/home/')) {
+                        await this.robotService.home(preview.endpoint.split('/').pop() ?? 'all');
+                        this.applyHomeToUi(preview.endpoint.split('/').pop() ?? 'all');
+                    } else if (preview.endpoint.startsWith('/api/sequence/run-sync/')) {
+                        const id = Number(preview.endpoint.split('/').pop());
+                        await this.robotService.runSequence(id);
+                    } else {
+                        throw new Error(`Unsupported AI preview endpoint: ${preview.endpoint}`);
+                    }
+            }
+
+            await this.refreshLogs();
+            await this.refreshGripPressure(false);
+            if (fromVoice) {
+                this.setVoiceStatus('Comando eseguito.', 'success');
+                this.playVoiceCue('execute');
+            }
+        } catch (err) {
+            this.aiError = err instanceof Error ? err.message : 'AI execution failed';
+            if (fromVoice) {
+                this.setVoiceStatus('Errore durante l’esecuzione del comando.', 'error');
+                this.playVoiceCue('error');
+            }
+        } finally {
+            this.isExecutingAi = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    toggleVoiceRecognition() {
+        if (!this.voiceSupported) {
+            this.aiError = 'Riconoscimento vocale non supportato da questo browser.';
+            return;
+        }
+
+        if (this.voiceAutoRestart || this.isListeningVoice) {
+            this.stopVoiceRecognition();
+            return;
+        }
+
+        this.aiError = '';
+        this.voiceTranscriptDraft = '';
+        this.voiceLiveTranscript = '';
+        this.lastWakeTrigger = '';
+        this.voiceStatusMessage = '';
+        this.voiceAutoRestart = true;
+        this.speechRecognition?.start();
     }
 
     async refreshLogs() {
@@ -483,6 +688,38 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
+    private applyJointStateFromPayload(payload: Record<string, unknown>) {
+        this.m1 = Number(payload['m1'] ?? this.m1);
+        this.m2 = Number(payload['m2'] ?? this.m2);
+        this.m3 = Number(payload['m3'] ?? this.m3);
+        this.m5 = Number(payload['m5'] ?? this.m5);
+        this.m6 = Number(payload['m6'] ?? this.m6);
+        this.hasPendingManual = false;
+        this.pushViewerAngles();
+    }
+
+    private applyHomeToUi(axis: string) {
+        if (axis === 'all') {
+            this.m1 = 0;
+            this.m2 = 0;
+            this.m3 = 0;
+            this.m5 = 0;
+            this.m6 = 0;
+        } else if (axis === '1') {
+            this.m1 = 0;
+        } else if (axis === '2') {
+            this.m2 = 0;
+        } else if (axis === '3') {
+            this.m3 = 0;
+        } else if (axis === '5') {
+            this.m5 = 0;
+        } else if (axis === '6') {
+            this.m6 = 0;
+        }
+        this.hasPendingManual = false;
+        this.pushViewerAngles();
+    }
+
     get currentGripCommand(): string {
         return this.gripOpen ? 'GRIP:120' : 'GRIP:0';
     }
@@ -498,5 +735,214 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             { label: 'E3', value: this.endstopState.e3 },
             { label: 'E4', value: this.endstopState.e4 }
         ];
+    }
+
+    get aiConfidencePercent(): number | null {
+        const confidence = this.aiResult?.parsed.confidence;
+        return typeof confidence === 'number' ? Math.round(confidence * 100) : null;
+    }
+
+    private initVoiceRecognition() {
+        const recognitionCtor = this.getSpeechRecognitionCtor();
+        if (!recognitionCtor) {
+            this.voiceSupported = false;
+            return;
+        }
+
+        const recognition = new recognitionCtor();
+        recognition.lang = 'it-IT';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+            this.isListeningVoice = true;
+            this.voiceTranscriptDraft = '';
+            this.voiceLiveTranscript = '';
+            this.cdr.detectChanges();
+        };
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const chunk = event.results[i]?.[0]?.transcript ?? event.results[i]?.item(0)?.transcript ?? '';
+                transcript += chunk;
+            }
+
+            const cleanedTranscript = transcript.trim();
+            this.voiceLiveTranscript = cleanedTranscript;
+            this.voiceTranscriptDraft = cleanedTranscript;
+            if (cleanedTranscript) {
+                this.naturalCommand = cleanedTranscript;
+            }
+            const latestResult = event.results[event.results.length - 1];
+            if (latestResult?.isFinal) {
+                void this.handleFinalVoiceTranscript(this.voiceTranscriptDraft);
+            }
+            this.cdr.detectChanges();
+        };
+
+        recognition.onerror = (event) => {
+            this.isListeningVoice = false;
+            if (event.error && event.error !== 'no-speech' && event.error !== 'aborted') {
+                this.aiError = `Errore riconoscimento vocale: ${event.error}`;
+            }
+            this.cdr.detectChanges();
+        };
+
+        recognition.onend = () => {
+            this.isListeningVoice = false;
+            if (this.voiceAutoRestart) {
+                setTimeout(() => {
+                    if (this.voiceAutoRestart) {
+                        this.speechRecognition?.start();
+                    }
+                }, 250);
+            }
+            this.cdr.detectChanges();
+        };
+
+        this.speechRecognition = recognition;
+        this.voiceSupported = true;
+    }
+
+    private stopVoiceRecognition() {
+        this.voiceAutoRestart = false;
+        if (this.speechRecognition && this.isListeningVoice) {
+            this.speechRecognition.stop();
+        }
+        this.isListeningVoice = false;
+        this.voiceLiveTranscript = '';
+    }
+
+    private async handleFinalVoiceTranscript(transcript: string) {
+        const cleaned = transcript.trim();
+        if (!cleaned) {
+            return;
+        }
+
+        const normalized = this.normalizeVoiceText(cleaned);
+        const wakeWord = this.normalizeVoiceText(this.voiceWakeWord);
+        const tokens = normalized.split(' ').filter(Boolean);
+        const wakeIndex = tokens.findIndex((token) => token === wakeWord);
+
+        // Accept "robot ..." and also short lead-ins like "hey robot ..."
+        if (wakeIndex === -1 || wakeIndex > 1) {
+            return;
+        }
+
+        const command = tokens.slice(wakeIndex + 1).join(' ').trim();
+
+        if (!command) {
+            this.aiError = `Wake word rilevata. Pronuncia: "${this.voiceWakeWord} home asse 2".`;
+            this.cdr.detectChanges();
+            return;
+        }
+
+        this.naturalCommand = command;
+        this.voiceTranscriptDraft = command;
+        this.lastWakeTrigger = cleaned;
+        this.showWakeOverlay();
+        this.setVoiceStatus(`Wake word rilevata. Comando: ${command}`, 'info');
+        this.playVoiceCue('wake');
+        await this.interpretAiCommand(true);
+    }
+
+    private showWakeOverlay() {
+        this.voiceWakeDetected = true;
+        if (this.wakeOverlayTimer) {
+            clearTimeout(this.wakeOverlayTimer);
+        }
+        this.wakeOverlayTimer = setTimeout(() => {
+            this.voiceWakeDetected = false;
+            this.cdr.detectChanges();
+        }, 1800);
+        this.cdr.detectChanges();
+    }
+
+    private setVoiceStatus(message: string, tone: 'info' | 'success' | 'error') {
+        this.voiceStatusMessage = message;
+        this.voiceStatusTone = tone;
+        if (this.voiceStatusTimer) {
+            clearTimeout(this.voiceStatusTimer);
+        }
+        this.voiceStatusTimer = setTimeout(() => {
+            this.voiceStatusMessage = '';
+            this.cdr.detectChanges();
+        }, 3200);
+        this.cdr.detectChanges();
+    }
+
+    private playVoiceCue(kind: 'wake' | 'execute' | 'error') {
+        try {
+            const AudioCtx = window.AudioContext
+                || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+            if (!AudioCtx) {
+                return;
+            }
+            if (!this.audioContext) {
+                this.audioContext = new AudioCtx();
+            }
+
+            const now = this.audioContext.currentTime;
+            const master = this.audioContext.createGain();
+            master.gain.value = 0.05;
+            master.connect(this.audioContext.destination);
+
+            const notes = kind === 'wake'
+                ? [{ freq: 740, duration: 0.08 }, { freq: 920, duration: 0.09 }]
+                : kind === 'execute'
+                    ? [{ freq: 620, duration: 0.06 }, { freq: 820, duration: 0.06 }, { freq: 1040, duration: 0.08 }]
+                    : [{ freq: 340, duration: 0.12 }, { freq: 250, duration: 0.16 }];
+
+            let cursor = now;
+            for (const note of notes) {
+                const osc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                osc.type = kind === 'error' ? 'sawtooth' : 'sine';
+                osc.frequency.setValueAtTime(note.freq, cursor);
+                gain.gain.setValueAtTime(0.0001, cursor);
+                gain.gain.exponentialRampToValueAtTime(1, cursor + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, cursor + note.duration);
+                osc.connect(gain);
+                gain.connect(master);
+                osc.start(cursor);
+                osc.stop(cursor + note.duration);
+                cursor += note.duration + 0.03;
+            }
+        } catch {
+            // Best effort only.
+        }
+    }
+
+    private shouldAutoExecuteAi(result: AiInterpretResponse | null): boolean {
+        const intent = result?.parsed.intent;
+        if (!intent || !result?.preview) {
+            return false;
+        }
+
+        return intent === 'home'
+            || intent === 'set_grip'
+            || intent === 'move_joint'
+            || intent === 'move_joint_delta'
+            || intent === 'run_sequence';
+    }
+
+    private normalizeVoiceText(value: string): string {
+        return value
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    private getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
+        const target = window as Window & {
+            SpeechRecognition?: SpeechRecognitionCtor;
+            webkitSpeechRecognition?: SpeechRecognitionCtor;
+        };
+
+        return target.SpeechRecognition ?? target.webkitSpeechRecognition ?? null;
     }
 }
