@@ -6,7 +6,7 @@ services:
     container_name: robot-backend
     restart: always
     ports:
-      - "3000:3000"
+      - "3002:3002"
 
     # ---------------------------------------------------------
     # RASPBERRY PI CONFIGURATION

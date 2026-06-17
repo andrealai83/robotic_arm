@@ -35,7 +35,7 @@ interface AppDependencies {
 
 export function createApp(deps: AppDependencies = {}) {
     const app = express();
-    const port = deps.port ?? 3000;
+    const port = deps.port ?? 3002;
     const serial = deps.serial ?? new SerialManager();
     const storage = deps.storage ?? new Storage();
     const robotConfigStore = deps.robotConfigStore ?? new RobotConfigStore();
