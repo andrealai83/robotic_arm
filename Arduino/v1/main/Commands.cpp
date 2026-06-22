@@ -512,7 +512,7 @@ void endstopTelemetryUpdate() {
   bool e1 = (digitalRead(ENDSTOP_1_PIN) == LOW);
   bool e2 = (digitalRead(ENDSTOP_2_PIN) == LOW);
   bool e3 = (digitalRead(ENDSTOP_3_PIN) == LOW);
-  bool e4 = false;
+  bool e4 = (digitalRead(ENDSTOP_4_PIN) == LOW);
 
   mostraStatoEndstop(e1, e2, e3, e4);
   Serial.print(F("ENDSTOP "));

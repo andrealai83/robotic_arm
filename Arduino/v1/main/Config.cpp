@@ -11,8 +11,8 @@ int ENA3 = 7, DIR3 = 6,  PUL3 = 5;
 int ENA4 = 10, DIR4 = 9,  PUL4 = 8; 
 int ENA2 = 4,  DIR2 = 3,  PUL2 = 2;
 
-int ENA5 = 16, DIR5 = 17, PUL5 = 14;
-int ENA6 = 51, DIR6 = 49, PUL6 = 50;
+int ENA6 = 16, DIR6 = 17, PUL6 = 14;
+int ENA5 = 22, DIR5 = 23, PUL5 = 24;
 
 // Stato globale
 bool saveRequest = false;
